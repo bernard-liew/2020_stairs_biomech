@@ -1,0 +1,85 @@
+---
+title: "1_import"
+output: html_notebook
+---
+ 
+# Import library
+
+```{r}
+rm (list = ls())
+
+# Helper
+library (tidyverse)
+
+# Import
+library (rio)
+
+# Exploration 
+library (DataExplorer)
+library (janitor)
+library (arsenal)
+
+# functional plots and outliers
+library (rainbow)
+library (mrfDepth)
+
+# modelling
+library (FDboost)
+
+# parallel
+library(doParallel)
+library(foreach)
+library (furrr)
+
+# custom 
+
+source ("../code/extract_from_mat.R")
+
+```
+
+# Import raw data
+
+```{r}
+
+raw_dir <- "../../../gait_database/data_stairs"
+
+list_of_files <- list.files(raw_dir, pattern = ".mat")
+
+registerDoParallel(cores = 6)
+
+
+id.list  <- foreach(f = 1:length(list_of_files), .packages="R.matlab")%dopar% {
+
+  readMat (file.path (raw_dir, list_of_files [f]))
+  
+}
+
+df.list  <- foreach(f = 1:length(list_of_files), .packages="rmatio")%dopar% {
+
+  read.mat (file.path (raw_dir, list_of_files [f]))
+  
+}
+
+names(id.list) <- str_remove(list_of_files, ".mat")
+names(df.list) <- str_remove(list_of_files, ".mat")
+
+
+```
+
+# Restruture data
+
+```{r}
+df_restruct <- pmap (list (id = id.list, data = df.list), extract_from_mat)
+
+```
+
+
+# Export data
+ 
+```{r}
+
+output_dir <- "../output"
+file_name <- "df_combined.RDS"
+
+saveRDS(df_restruct, file = file.path(output_dir, file_name))
+```

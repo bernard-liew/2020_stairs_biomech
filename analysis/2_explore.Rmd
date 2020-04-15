@@ -1,0 +1,83 @@
+---
+title: "2_explore"
+output: html_notebook
+---
+ 
+# Import library
+
+```{r}
+
+# Helper
+library (tidyverse)
+
+# Import
+library (rio)
+
+# Exploration 
+library (DataExplorer)
+library (janitor)
+library (arsenal)
+library (ggforce)
+
+# functional plots and outliers
+library (rainbow)
+library (mrfDepth)
+
+# modelling
+library (FDboost)
+
+# parallel
+library(doParallel)
+library(foreach)
+library (furrr)
+
+# custom 
+
+source ("../code/extract_from_mat.R")
+
+```
+
+# Import raw data
+
+```{r}
+
+rm (list = ls())
+
+output_dir <- "../output"
+file_name <- "df_combined.RDS"
+
+df.list <- readRDS (file.path(output_dir, file_name))
+
+
+```
+
+# Restruture data
+
+```{r}
+df <- df.list %>%
+  map (~.$biomech) %>%
+  bind_rows() %>%
+  separate(task, into = c("task", "rep"), sep = "_")
+
+```
+
+
+# Plot
+ 
+```{r}
+
+df_plot <- df %>%
+  group_by(task, var_axis, side, cycle) %>%
+  summarize (Mean = mean (val, na.rm = TRUE)) %>%
+  ungroup()
+
+f <- ggplot (data= df_plot) +
+  geom_line (aes (x = cycle, y = Mean, colour = side)) +
+  facet_wrap_paginate(task ~ var_axis, ncol = 6, nrow = 6, scales = "free", page = 2, drop = FALSE)
+
+fig_name <- "explore_plot.pdf"
+
+pdf(width = 10, height = 8, file = file.path(output_dir, fig_name))
+f
+dev.off()
+```
