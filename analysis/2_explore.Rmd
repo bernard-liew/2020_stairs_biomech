@@ -1,11 +1,15 @@
 ---
 title: "2_explore"
 output: html_notebook
+editor_options: 
+  chunk_output_type: console
 ---
  
 # Import library
 
 ```{r}
+
+rm (list = ls())
 
 # Helper
 library (tidyverse)
@@ -41,9 +45,7 @@ source ("../code/extract_from_mat.R")
 
 ```{r}
 
-rm (list = ls())
-
-output_dir <- "../output"
+output_dir <- "output"
 file_name <- "df_combined.RDS"
 
 df.list <- readRDS (file.path(output_dir, file_name))
@@ -73,11 +75,19 @@ df_plot <- df %>%
 
 f <- ggplot (data= df_plot) +
   geom_line (aes (x = cycle, y = Mean, colour = side)) +
-  facet_wrap_paginate(task ~ var_axis, ncol = 6, nrow = 6, scales = "free", page = 2, drop = FALSE)
+  facet_wrap_paginate(task ~ var_axis, ncol = 5, nrow = 5, scales = "free", page = 1)
 
 fig_name <- "explore_plot.pdf"
 
-pdf(width = 10, height = 8, file = file.path(output_dir, fig_name))
-f
+n <- n_pages(f)
+
+pdf (width = 10, height = 8, file = file.path(output_dir, fig_name))
+for(i in 1:n){
+    print(f + facet_wrap_paginate(task ~ var_axis, ncol = 5, nrow = 5, scales = "free", page = i))
+}
 dev.off()
+
+
+
+
 ```
