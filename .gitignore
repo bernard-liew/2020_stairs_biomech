@@ -2,4 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
+output/*.RDS
 2020_stairs_biomech.Rproj
