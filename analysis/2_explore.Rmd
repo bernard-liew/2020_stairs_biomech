@@ -37,7 +37,7 @@ library (furrr)
 
 # custom 
 
-source ("../code/extract_from_mat.R")
+source ("code/extract_from_mat.R")
 
 ```
 
@@ -63,12 +63,24 @@ df <- df.list %>%
 
 ```
 
+# Correct left ankle angles
+
+```{r}
+
+df2 <- df %>%
+  mutate (task = str_trim (task),
+          var_axis = str_trim (var_axis),
+          val = ifelse (side == "LX" & var_axis == "AnkleAdd", val * -1, 
+                        ifelse (task %in% c("ToeWalking", "Walking") & side == "LX" & var_axis == "AnkleRot", val * -1, val)))
+
+```
+
 
 # Plot
  
 ```{r}
 
-df_plot <- df %>%
+df_plot <- df2 %>%
   group_by(task, var_axis, side, cycle) %>%
   summarize (Mean = mean (val, na.rm = TRUE)) %>%
   ungroup()
@@ -89,5 +101,16 @@ dev.off()
 
 
 
+
+```
+
+# Export data
+ 
+```{r}
+
+output_dir <- "output"
+file_name <- "df_clean.RDS"
+
+saveRDS(df2, file = file.path(output_dir, file_name))
 
 ```
