@@ -33,7 +33,7 @@ library (furrr)
 
 # custom 
 
-source ("../code/extract_from_mat.R")
+source ("code/extract_from_mat.R")
 
 ```
 
@@ -78,7 +78,7 @@ df_restruct <- pmap (list (id = id.list, data = df.list), extract_from_mat)
  
 ```{r}
 
-output_dir <- "../output"
+output_dir <- "output"
 file_name <- "df_combined.RDS"
 
 saveRDS(df_restruct, file = file.path(output_dir, file_name))
