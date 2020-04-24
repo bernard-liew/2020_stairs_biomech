@@ -22,6 +22,7 @@ library (DataExplorer)
 library (janitor)
 library (arsenal)
 library (ggforce)
+library (gganimate)
 
 # functional plots and outliers
 library (rainbow)
@@ -103,6 +104,38 @@ dev.off()
 
 
 ```
+
+
+# Animated plots
+## Joint power
+
+```{r}
+
+jtpwr <- c("AnklePwr", "KneePwr", "HipPwr")
+df_plot <- df2 %>%
+  filter (task == "Walking" & var_axis %in% jtpwr) %>%
+  mutate (var_axis = factor (var_axis, levels = jtpwr)) %>%
+  group_by( age, var_axis, cycle) %>% 
+  summarise(val = mean (val))
+
+f <- animate(
+ggplot (data= df_plot, aes (x = cycle, y = val, colour = age)) +
+  geom_line(alpha = 0.7) +
+  facet_wrap(~ var_axis) +
+  transition_time (age, range = c(6, 72)) +
+  labs(title = "Age: {frame_time}") +
+  view_follow(fixed_y = TRUE),
+fps = 20, 
+renderer = av_renderer()
+)
+output_dir <- "output"
+file_name <- "pwr_anim_plot.mp4"
+anim_save(filename = file.path(output_dir, file_name), animation = f)
+
+
+```
+
+
 
 # Export data
  
