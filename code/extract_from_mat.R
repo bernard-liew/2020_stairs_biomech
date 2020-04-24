@@ -35,6 +35,7 @@ extract_from_mat <- function (id, data) {
     map (as.data.frame) %>% 
     bind_rows(.id = "task") %>% 
     mutate (var_axis = rep (ang_name, times = length (task_name)),
+            speed = rep (speed_name, each = length (ang_name)),
             side = rep (side_name, each = length (ang_name)), 
             strlen = rep (strlen_name, each = length (ang_name)), 
             strwid = rep (strwid_name, each = length (ang_name)), 
@@ -49,6 +50,7 @@ extract_from_mat <- function (id, data) {
     map (as.data.frame) %>% 
     bind_rows(.id = "task") %>% 
     mutate (var_axis = rep (mom_name, times = length (task_name)),
+            speed = rep (speed_name, each = length (mom_name)),
             side = rep (side_name, each = length (mom_name)), 
             strlen = rep (strlen_name, each = length (mom_name)), 
             strwid = rep (strwid_name, each = length (mom_name)), 
@@ -63,6 +65,7 @@ extract_from_mat <- function (id, data) {
     map (as.data.frame) %>% 
     bind_rows(.id = "task") %>% 
     mutate (var_axis = rep (pwr_name, times = length (task_name)),
+            speed = rep (speed_name, each = length (pwr_name)),
             side = rep (side_name, each = length (pwr_name)), 
             strlen = rep (strlen_name, each = length (pwr_name)), 
             strwid = rep (strwid_name, each = length (pwr_name)), 
@@ -77,6 +80,7 @@ extract_from_mat <- function (id, data) {
     map (as.data.frame) %>% 
     bind_rows(.id = "task") %>% 
     mutate (var_axis = rep (com_name, times = length (task_name)),
+            speed = rep (speed_name, each = length (com_name)),
             side = rep (side_name, each = length (com_name)), 
             strlen = rep (strlen_name, each = length (com_name)), 
             strwid = rep (strwid_name, each = length (com_name)), 

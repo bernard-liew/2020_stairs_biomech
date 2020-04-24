@@ -1,6 +1,8 @@
 ---
 title: "1_import"
 output: html_notebook
+editor_options: 
+  chunk_output_type: console
 ---
  
 # Import library
@@ -41,7 +43,7 @@ source ("code/extract_from_mat.R")
 
 ```{r}
 
-raw_dir <- "../../../gait_database/data_stairs"
+raw_dir <- "../../gait_database/data_stairs"
 
 list_of_files <- list.files(raw_dir, pattern = ".mat")
 
