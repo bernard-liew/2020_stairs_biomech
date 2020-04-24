@@ -69,10 +69,11 @@ df <- df.list %>%
 ```{r}
 
 df2 <- df %>%
+  mutate_if (is.character, ~tolower(.)) %>%
   mutate (task = str_trim (task),
           var_axis = str_trim (var_axis),
-          val = ifelse (side == "LX" & var_axis == "AnkleAdd", val * -1, 
-                        ifelse (task %in% c("ToeWalking", "Walking") & side == "LX" & var_axis == "AnkleRot", val * -1, val)))
+          val = ifelse (side == "lx" & var_axis == "ankleadd", val * -1, 
+                        ifelse (task %in% c("toewalking", "walking") & side == "lx" & var_axis == "anklerot", val * -1, val)))
 
 ```
 
