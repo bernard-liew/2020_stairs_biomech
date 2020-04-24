@@ -1,0 +1,100 @@
+---
+title: "3_gamlss_analysis"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+  
+# Import library
+  
+```{r}
+
+rm (list = ls())
+
+# Helper
+library (tidyverse)
+
+# Import
+library (rio)
+
+# Exploration 
+library (DataExplorer)
+library (janitor)
+library (arsenal)
+library (ggforce)
+
+# modelling
+library (gamlss)
+library (gamlss.add)
+
+# parallel
+library(doParallel)
+library(foreach)
+library (furrr)
+
+# custom 
+
+source ("code/extract_from_mat.R")
+
+```
+
+# Import data
+
+```{r}
+
+output_dir <- "output"
+file_name <- "df_clean.RDS"
+
+df <- readRDS (file.path(output_dir, file_name))
+
+
+```
+
+# Subset data
+
+```{r}
+
+df_walk <- df %>%
+  filter (task == "Walking") %>%
+  mutate (subj = factor (subj))
+
+df_walk_apwr <- df_walk  %>%
+  filter (var_axis == "AnklePwr") 
+
+df_walk_kpwr <- df_walk  %>%
+  filter (var_axis == "KneePwr")
+
+df_walk_hpwr <- df_walk  %>%
+  filter (var_axis == "HipPwr")
+
+```
+
+
+
+```{r}
+df_walk_apwr_ave <-df_walk_apwr  %>%
+  group_by(subj, age, side, cycle) %>%
+  summarize (val = mean (val, na.rm = TRUE),
+             speed = mean (speed, na.rm = TRUE),
+             strlen = mean (strlen, na.rm = TRUE),
+             cadence = mean (cadence, na.rm = TRUE)) %>%
+  ungroup () %>%
+  as.data.frame()
+
+# main smoothing effects 
+m0 <- gamlss(val ~ pb(cycle) + pb(age) + re(random = ~1|subj), data=df_walk_apwr, family = NO, trace=FALSE)
+# linear interaction 
+m1 <- gamlss(val ~ pb(cycle) + pb(age) + cycle:age + re(random = ~1|subj), data=df_walk_apwr, family = NO, trace=FALSE)
+# varying coefficients interaction 
+m2 <- gamlss(val ~ pb(cycle) + pb(age) + pvc (cycle, by = age) + re(random = ~1|subj), data=df_walk_apwr, family = NO, trace=FALSE)
+m3 <- gamlss(val ~ speed + pb(cycle) + pb(age) + pvc (age, by = cycle),
+             sigma.fo = ~ pb(cycle) + pb(age) ,
+             data=df_walk_apwr_ave, family = NO, trace=FALSE)
+# linear interaction plus varying coefficients interaction
+m4 <- gamlss(val ~ pb(cycle) + pb(age) + cycle:age + pvc (cycle, by = age) + re(random = ~1|subj), data=df_walk_apwr, family = NO, trace=FALSE)
+
+AIC(m0, m1,m2,m3, m4)
+
+```
+
+
