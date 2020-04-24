@@ -32,10 +32,6 @@ library(doParallel)
 library(foreach)
 library (furrr)
 
-# custom 
-
-source ("code/extract_from_mat.R")
-
 ```
 
 # Import data
@@ -55,31 +51,98 @@ df <- readRDS (file.path(output_dir, file_name))
 ```{r}
 
 df_walk <- df %>%
-  filter (task == "Walking") %>%
+  filter (task == "walking") %>%
   mutate (subj = factor (subj))
 
 df_walk_apwr <- df_walk  %>%
-  filter (var_axis == "AnklePwr") 
+  filter (var_axis == "anklepwr") 
 
 df_walk_kpwr <- df_walk  %>%
-  filter (var_axis == "KneePwr")
+  filter (var_axis == "kneepwr")
 
 df_walk_hpwr <- df_walk  %>%
-  filter (var_axis == "HipPwr")
+  filter (var_axis == "hippwr")
+
+```
+
+# Explore
+
+## Power against cycle
+
+```{r}
+windows()
+df_walk %>%
+  filter (var_axis %in% c("AnklePwr", "KneePwr", "HipPwr")) %>%
+  ggplot () +
+  geom_point (aes (x = cycle, y = val)) +
+  facet_wrap(side ~ var_axis)
+
+```
+
+## Power against age
+
+```{r}
+windows()
+df_walk %>%
+  filter (var_axis %in% c("AnklePwr", "KneePwr", "HipPwr")) %>%
+  ggplot () +
+  geom_point (aes (x = age, y = val)) +
+  facet_wrap(side ~ var_axis)
+
+```
+
+## Histogram of power
+
+```{r}
+
+windows()
+df_walk %>%
+  filter (var_axis %in% c("AnklePwr", "KneePwr", "HipPwr")) %>%
+  ggplot () +
+  geom_histogram (aes (val), binwidth = 1) +
+  facet_wrap(side ~ var_axis)
+
+```
+
+## Boxplot power against sex
+
+```{r}
+
+windows()
+df_walk %>%
+  filter (var_axis %in% c("AnklePwr", "KneePwr", "HipPwr")) %>%
+  ggplot () +
+  geom_boxplot(aes (x = sex, y = val)) +
+  facet_wrap(side ~ var_axis)
 
 ```
 
 
-
 ```{r}
 df_walk_apwr_ave <-df_walk_apwr  %>%
-  group_by(subj, age, side, cycle) %>%
+  group_by(subj, sex, age, side, cycle) %>%
   summarize (val = mean (val, na.rm = TRUE),
              speed = mean (speed, na.rm = TRUE),
              strlen = mean (strlen, na.rm = TRUE),
              cadence = mean (cadence, na.rm = TRUE)) %>%
   ungroup () %>%
   as.data.frame()
+
+m0 <- gamlss(val ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
+             sigma.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
+             nu.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
+             tau.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
+             data = df_walk_apwr_ave,
+             trace = FALSE)
+
+m0 <- gamlss(val ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
+             sigma.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
+             nu.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
+             tau.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
+             data = df_walk_apwr_ave,
+             family = TF,
+             trace = FALSE)
+
 
 # main smoothing effects 
 m0 <- gamlss(val ~ pb(cycle) + pb(age) + re(random = ~1|subj), data=df_walk_apwr, family = NO, trace=FALSE)
