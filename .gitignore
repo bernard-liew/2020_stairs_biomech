@@ -3,4 +3,5 @@
 .RData
 .Ruserdata
 output/*.RDS
+output/*.mp4
 2020_stairs_biomech.Rproj
