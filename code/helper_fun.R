@@ -151,3 +151,17 @@ gather_reps_cols2rows <- function (x) {
   
 
 }
+
+
+my_outlier <- function (x) {
+  
+  Data <- t(x)
+  Data = array (Data, dim = c(nrow (Data), ncol(Data), 1))
+  Result <- fOutl(Data, type = "fDO", diagnostic = TRUE)
+  out <- Result$locOutlX == 1
+  outData <- x
+  outData[out] <- NA
+  
+  return(outData)
+  
+}
