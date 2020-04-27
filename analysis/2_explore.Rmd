@@ -38,7 +38,7 @@ library (furrr)
 
 # custom 
 
-source ("code/extract_from_mat.R")
+source ("code/helper_fun.R")
 
 ```
 
@@ -47,95 +47,459 @@ source ("code/extract_from_mat.R")
 ```{r}
 
 output_dir <- "output"
+
 file_name <- "df_combined.RDS"
 
-df.list <- readRDS (file.path(output_dir, file_name))
+list_of_files <- list.files(output_dir, pattern = ".RDS")
+
+df.list <- list()
+
+for (n in seq_along(list_of_files)) {
+  
+  
+  df.list[[n]] <- readRDS (file.path(output_dir, list_of_files[n]))
+  
+}
+
+names (df.list) <- str_remove (list_of_files, ".RDS")
 
 
 ```
 
-# Restruture data
+# Clean data
+
+## lencioni data
 
 ```{r}
-df <- df.list %>%
+
+temp <- df.list$df_lencioni %>%
   map (~.$biomech) %>%
   bind_rows() %>%
-  separate(task, into = c("task", "rep"), sep = "_")
-
-```
-
-# Correct left ankle angles
-
-```{r}
-
-df2 <- df %>%
+  separate(task, into = c("task", "rep"), sep = "_")%>%
   mutate_if (is.character, ~tolower(.)) %>%
   mutate (task = str_trim (task),
           var_axis = str_trim (var_axis),
           val = ifelse (side == "lx" & var_axis == "ankleadd", val * -1, 
-                        ifelse (task %in% c("toewalking", "walking") & side == "lx" & var_axis == "anklerot", val * -1, val)))
+                        ifelse (task %in% c("toewalking", "walking") & side == "lx" & var_axis == "anklerot", val * -1, val))) %>%
+  filter (var_axis %in% c("anklepwr", "kneepwr", "hippwr")) %>%
+  filter (task == "walking") %>%
+  mutate (study = "lencioni",
+          joint = ifelse (var_axis == "anklepwr", "ankle",
+                          ifelse (var_axis == "kneepwr", "knee",
+                                  "hip"))) %>%
+  dplyr::select (-c(task, strlen, strwid, cadence, var_axis))
 
 ```
 
 
-# Plot
+## Individual plot
  
 ```{r}
 
-df_plot <- df2 %>%
-  group_by(task, var_axis, side, cycle) %>%
-  summarize (Mean = mean (val, na.rm = TRUE)) %>%
-  ungroup()
+df_plot <- temp %>%
+  unite ("subj_rep_side", subj, rep, side, sep = "_")
 
+  
 f <- ggplot (data= df_plot) +
-  geom_line (aes (x = cycle, y = Mean, colour = side)) +
-  facet_wrap_paginate(task ~ var_axis, ncol = 5, nrow = 5, scales = "free", page = 1)
+  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
+  facet_wrap( ~ joint) + 
+  theme(legend.position = "none")
 
-fig_name <- "explore_plot.pdf"
+data_name <- "lencioni" 
 
-n <- n_pages(f)
+fig_name <- "individual_plot.pdf"
 
-pdf (width = 10, height = 8, file = file.path(output_dir, fig_name))
-for(i in 1:n){
-    print(f + facet_wrap_paginate(task ~ var_axis, ncol = 5, nrow = 5, scales = "free", page = i))
-}
+
+pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
+f
+dev.off()
+
+
+```
+
+## Save back to df.list
+
+```{r}
+df.list$df_lencioni <- temp
+```
+
+
+## taylor data
+
+```{r}
+
+temp <- df.list$df_taylor %>%
+  mutate (study = "taylor") %>%
+  dplyr::select (-c(cadence, strlen)) %>%
+  mutate (var = str_remove (var, "Pow")) %>%
+  mutate_if (is.character, ~tolower(.)) %>%
+  rename (joint = var)
+
+```
+
+
+## Individual plot
+ 
+```{r}
+
+df_plot <- temp 
+
+  
+f <- ggplot (data= df_plot) +
+  geom_line (aes (x = cycle, y = val, colour = as.factor (subj))) +
+  facet_wrap( ~ joint) + 
+  theme(legend.position = "none")
+
+data_name <- "taylor" 
+
+fig_name <- "individual_plot.pdf"
+
+
+pdf (width = 10, height = 6, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
+f
 dev.off()
 
 
 
+```
 
+## Remove outlier
+
+```{r}
+temp2 <- temp %>%
+  pivot_wider(names_from = "cycle",
+              values_from = "val")
+
+
+
+for (n in seq_along(unique (temp2$joint))) {
+  
+  var <- unique (temp2$joint)[n]
+  
+  temp2 [temp2$joint == var, names (temp2) %in% c(1:101)] <- 
+    my_outlier(temp2 [temp2$joint == var, names (temp2) %in% c(1:101)])
+  
+  
+  
+}
+
+temp3 <- temp2 %>%
+  na.omit() %>%
+  pivot_longer(cols = c("1":"101"),
+               names_to = "cycle",
+               names_ptypes = list (cycle = numeric()),
+               values_to = "val")
 ```
 
 
-# Animated plots
-## Joint power
+## recheck individual plot
+ 
+```{r}
+
+df_plot <- temp3 
+
+  
+f <- ggplot (data= df_plot) +
+  geom_line (aes (x = cycle, y = val, colour = subj)) +
+  facet_wrap( ~ joint) + 
+  theme(legend.position = "none")
+
+data_name <- "taylor" 
+
+fig_name <- "individual_clean_plot.pdf"
+
+
+pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
+f
+dev.off()
+
+
+```
+
+## Save back to df.list
+
+```{r}
+df.list$df_taylor <- temp3
+```
+
+
+## horst data
 
 ```{r}
 
-jtpwr <- c("AnklePwr", "KneePwr", "HipPwr")
-df_plot <- df2 %>%
-  filter (task == "Walking" & var_axis %in% jtpwr) %>%
-  mutate (var_axis = factor (var_axis, levels = jtpwr)) %>%
-  group_by( age, var_axis, cycle) %>% 
-  summarise(val = mean (val))
+temp <- df.list$df_horst %>%
+  mutate (study = "horst") %>%
+  rename (val = pwr,
+          rep = reps) %>%
+  mutate (val = val/wt) 
 
-f <- animate(
-ggplot (data= df_plot, aes (x = cycle, y = val, colour = age)) +
-  geom_line(alpha = 0.7) +
-  facet_wrap(~ var_axis) +
-  transition_time (age, range = c(6, 72)) +
-  labs(title = "Age: {frame_time}") +
-  view_follow(fixed_y = TRUE),
-fps = 20, 
-renderer = av_renderer()
-)
-output_dir <- "output"
-file_name <- "pwr_anim_plot.mp4"
-anim_save(filename = file.path(output_dir, file_name), animation = f)
+```
+
+
+## Individual plot
+ 
+```{r}
+
+df_plot <- temp %>%
+  unite ("subj_rep_side", subj, rep, side, sep = "_")
+
+  
+f <- ggplot (data= df_plot) +
+  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
+  facet_wrap( ~ joint) + 
+  theme(legend.position = "none")
+
+data_name <- "horst" 
+
+fig_name <- "individual_plot.pdf"
+
+
+pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
+f
+dev.off()
 
 
 ```
 
+## Remove outlier
+
+```{r}
+temp2 <- temp %>%
+  pivot_wider(names_from = "cycle",
+              values_from = "val")
+
+
+
+for (n in seq_along(unique (temp2$joint))) {
+  
+  var <- unique (temp2$joint)[n]
+  
+  temp2 [temp2$joint == var, names (temp2) %in% c(1:101)] <- 
+    my_outlier(temp2 [temp2$joint == var, names (temp2) %in% c(1:101)])
+  
+  
+  
+}
+
+temp3 <- temp2 %>%
+  na.omit() %>%
+  pivot_longer(cols = c("1":"101"),
+               names_to = "cycle",
+               names_ptypes = list (cycle = numeric()),
+               values_to = "val")
+```
+
+
+## recheck individual plot
+ 
+```{r}
+
+df_plot <- temp3 %>%
+  unite ("subj_rep_side", subj, rep, side, sep = "_")
+
+  
+f <- ggplot (data= df_plot) +
+  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
+  facet_wrap( ~ joint) + 
+  theme(legend.position = "none")
+
+data_name <- "horst" 
+
+fig_name <- "individual_clean_plot.pdf"
+
+
+pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
+f
+dev.off()
+
+
+```
+
+## Save back to df.list
+
+```{r}
+df.list$df_horst <- temp3
+```
+
+## fukuchi data
+
+```{r}
+
+temp <- df.list$df_fukuchi %>%
+  rename (val = pwr,
+          rep = reps) %>%
+  mutate (study = "fukuchi")%>%
+  mutate (val = val/wt)
+
+
+```
+
+
+## Individual plot
+ 
+```{r}
+
+df_plot <- temp %>%
+  unite ("subj_rep_side", subj, rep, side, sep = "_")
+
+  
+f <- ggplot (data= df_plot) +
+  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
+  facet_wrap( ~ joint) + 
+  theme(legend.position = "none")
+
+data_name <- "fukuchi" 
+
+fig_name <- "individual_plot.pdf"
+
+
+pdf (width = 10, height = 6, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
+f
+dev.off()
+
+
+
+```
+
+
+## Remove outlier
+
+```{r}
+temp2 <- temp %>%
+  pivot_wider(names_from = "cycle",
+              values_from = "val") %>%
+  na.omit ()
+
+for (n in seq_along(unique (temp2$joint))) {
+  
+  var <- unique (temp2$joint)[n]
+  
+  temp2 [temp2$joint == var, names (temp2) %in% c(1:101)] <- 
+    my_outlier(temp2 [temp2$joint == var, names (temp2) %in% c(1:101)])
+  
+  
+  
+}
+
+temp3 <- temp2 %>%
+  na.omit() %>%
+  pivot_longer(cols = c("1":"101"),
+               names_to = "cycle",
+               names_ptypes = list (cycle = numeric()),
+               values_to = "val")
+```
+
+
+## recheck individual plot
+ 
+```{r}
+
+df_plot <- temp3 %>%
+  unite ("subj_rep_side", subj, rep, side, sep = "_")
+
+  
+f <- ggplot (data= df_plot) +
+  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
+  facet_wrap( ~ joint) + 
+  theme(legend.position = "none")
+
+data_name <- "fukuchi" 
+
+fig_name <- "individual_clean_plot.pdf"
+
+
+pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
+f
+dev.off()
+
+
+```
+
+## Save back to df.list
+
+```{r}
+df.list$df_fukuchi<- temp3
+```
+
+
+# Combine four data
+
+## Average over subj
+
+```{r}
+
+for (n in seq_along(df.list)) {
+  
+  df.list[[n]] <- df.list[[n]] %>%
+    group_by(study, subj, age, sex, wt, ht, speed, joint, cycle) %>%
+    summarise(val = mean (val, na.rm = TRUE)) %>%
+    ungroup ()
+  
+  
+}
+
+```
+
+## Change subj names
+
+```{r}
+
+for (n in seq_along(df.list)) {
+  
+  df.list[[n]] <- df.list[[n]] %>%
+    mutate (subj = paste0(study, "_", subj))
+  
+}
+
+```
+
+## Bind df.list
+
+```{r}
+df <- df.list %>%
+  bind_rows() %>%
+  mutate (sex = str_trim(sex))
+```
+
+## Plot of power over cycle, age, speed
+
+```{r}
+
+age_cut <- seq (5, 95, 10)
+age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
+
+speed_cut <- seq (0.25, 2.35, 0.35)
+speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
+
+df_plot <- df %>%
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels),
+          speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
+  group_by(speed_cat, age_cat, joint, cycle) %>%
+  summarize (val = mean(val, na.rm = TRUE)) %>%
+  ungroup ()
+
+
+
+f <- ggplot (data = df_plot) +
+  geom_line (aes (x = cycle, y = val, colour = speed_cat)) +
+  guides(colour = guide_legend(title="Speed (m/s)")) +
+  facet_wrap_paginate(age_cat~joint, ncol = 3, nrow = 2, page = 3)
+
+n <- n_pages(f)
+
+fig_name <- "summary_plots.pdf"
+
+pdf (width = 10, height = 8, file = file.path(output_dir, fig_name))
+
+for (i in 1:n) {
+  
+  print (f + facet_wrap_paginate(age_cat ~ joint, ncol = 3, nrow = 2, page = i))
+  
+}
+
+dev.off()
+
+```
 
 
 # Export data
@@ -145,6 +509,6 @@ anim_save(filename = file.path(output_dir, file_name), animation = f)
 output_dir <- "output"
 file_name <- "df_clean.RDS"
 
-saveRDS(df2, file = file.path(output_dir, file_name))
+saveRDS(df, file = file.path(output_dir, file_name))
 
 ```
