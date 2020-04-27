@@ -35,11 +35,20 @@ library (furrr)
 
 # custom 
 
-source ("code/extract_from_mat.R")
+source ("code/helper_fun.R")
 
 ```
 
-# Import raw data
+#Specify common directories
+
+```{r}
+output_dir <- "output"
+```
+
+
+# Lencioni data
+
+## Import raw data
 
 ```{r}
 
@@ -68,7 +77,7 @@ names(df.list) <- str_remove(list_of_files, ".mat")
 
 ```
 
-# Restruture data
+## Restruture data
 
 ```{r}
 df_restruct <- pmap (list (id = id.list, data = df.list), extract_from_mat)
@@ -76,12 +85,310 @@ df_restruct <- pmap (list (id = id.list, data = df.list), extract_from_mat)
 ```
 
 
-# Export data
+## Export data
  
 ```{r}
 
-output_dir <- "output"
-file_name <- "df_combined.RDS"
+
+file_name <- "df_lencioni.RDS"
 
 saveRDS(df_restruct, file = file.path(output_dir, file_name))
+```
+
+# Taylor data
+
+## Import raw data
+
+```{r, eval = FALSE}
+
+raw_dir <- "../../gait_database/data_taylor"
+file_name <- "power_wave.xlsx"
+
+sheets <- readxl::excel_sheets (file.path (raw_dir, file_name))
+
+df.list <- list()
+  
+for (n in seq_along(sheets)) {
+  
+  df.list[[n]] <- readxl::read_excel(file.path (raw_dir, file_name), sheet = sheets[n])
+  
+}  
+
+names (df.list) <- sheets
+
+file_name <- "demograph.csv"
+demograph <- read_csv(file.path (raw_dir, file_name))
+
+```
+
+## Restructure data
+
+```{r}
+
+
+
+df.list <- map (df.list, wide_2_long)
+
+df <- df.list %>%
+  bind_rows(.id = "var") %>% 
+  mutate (subj = as.numeric(subj)) %>%
+  inner_join(demograph, by = "subj") %>%
+  rename (sex = Gender,
+          age = Age,
+          wt = Mass,
+          ht = Height,
+          cadence = Cadence,
+          strlen = `Stride Length`,
+          speed = `Walking Speed`) %>%
+  dplyr::select (subj, age, sex,wt, ht, speed, cadence, strlen, var, cycle, val)
+
+```
+
+## Export data
+ 
+```{r}
+
+file_name <- "df_taylor.RDS"
+
+saveRDS(df, file = file.path(output_dir, file_name))
+
+```
+
+
+# Fukuchi data
+
+## Import raw data
+
+```{r, eval = FALSE}
+
+raw_dir <- "../../gait_database/data_fukuchi/fun"
+
+list_of_files <- list.files(raw_dir, pattern = ".txt")
+list_of_files <- list_of_files[!grepl ("bad", list_of_files)]
+
+registerDoParallel(cores = 6)
+
+df.list  <- foreach(f = 1:length(list_of_files), .packages="tidyverse")%dopar% {
+
+  read_tsv (file = file.path (raw_dir, list_of_files [f]), 
+                  col_names = T, 
+                  skip = 4)
+}
+
+names (df.list) <- list_of_files
+
+demo <- read_delim("data/fukuchi_demo.txt", "\t",
+                       escape_double = FALSE, trim_ws = TRUE) %>%
+  rename_all(tolower) %>%
+  mutate_if(is.character, ~tolower (.)) %>%
+  mutate (cond = paste0("walk", speedgrp)) %>%
+  rename (subj = subject,
+          ht = height,
+          wt = mass) %>%
+  dplyr::select (subj, age, sex, cond, ht, wt, speed)
+
+bad_subj <- c(18, 21, 25, 29, 32, 33, 34, 35, 38)
+
+```
+
+## modify identifier
+
+```{r}
+
+id <- list_of_files  %>%
+  tolower() %>%
+  str_remove(".txt") %>%
+  str_remove("_scalar")
+
+```
+
+
+## Modify each item in list wide to long
+
+
+```{r}
+
+plan (multisession)
+
+df2.list <- df.list %>%
+  future_map (~ gather_reps_cols2rows(.)) 
+
+```
+
+## Restructure data
+
+```{r message=FALSE, warning=FALSE}
+
+registerDoParallel(cores = 6)
+
+df3.list  <- foreach(f = 1:length(df2.list), .packages="tidyverse")%dopar% {
+  
+  # split identifier
+ id.df <- data.frame (id = id[f]) %>%
+   separate(id, into = c("subj", "cond", "side", "joint", "var"), sep = "_")
+ 
+ # merge with demograph data
+ df.temp <- df2.list [[f]] %>%
+   add_column(!!! id.df, .before = "ITEM") %>%
+   mutate (reps = as.numeric(reps)) %>%
+   mutate_if(is.character, ~tolower (.)) %>%
+   rename (cycle = ITEM,
+           pwr = X) 
+ 
+ return (df.temp)
+
+}
+
+df4 <- df3.list %>%
+  bind_rows () %>%
+  mutate (subj = str_extract(subj, "[[:digit:]]+") %>% as.numeric) %>%
+  filter (subj != bad_subj) %>%
+  inner_join(demo, by = c("subj", "cond")) %>%
+  dplyr::select (-c(cond, var))
+
+
+```
+
+## Export data
+ 
+```{r}
+
+file_name <- "df_fukuchi.RDS"
+
+saveRDS(df4, file = file.path(output_dir, file_name))
+
+```
+
+# Horst data
+
+## Import raw data
+
+```{r, eval = FALSE}
+
+# Import biomechanics data
+
+raw_dir <- "../../gait_database/data_1/v3d/data/fun"
+
+list_of_files_raw <- list.files(raw_dir, pattern = ".txt")
+
+registerDoParallel(cores = 6)
+
+df.list  <- foreach(f = 1:length(list_of_files_raw), .packages="tidyverse")%dopar% {
+
+  read_tsv (file = file.path (raw_dir, list_of_files_raw [f]), 
+                  col_names = T, 
+                  skip = 4)
+}
+
+names (df.list) <- list_of_files_raw
+
+# Import speed data
+
+vel_dir <- "../../gait_database/data_1/v3d/data"
+
+list_of_files_vel <- list.files(vel_dir, pattern = "*VEL.txt")
+
+registerDoParallel(cores = 6)
+
+vel.list  <- foreach(f = 1:length(list_of_files_vel), .packages="tidyverse")%dopar% {
+
+  read_tsv (file = file.path (vel_dir, list_of_files_vel [f]), 
+                  col_names = T, 
+                  skip = 4)
+}
+
+names (vel.list) <- list_of_files_vel
+
+# Import demography data
+
+demo <- readxl::read_excel ("../../gait_database/data_1/Gait_subject_info.xlsx") 
+
+names (demo) <- c("subj", "sex", "age", "wt", "ht")
+
+demo <- demo %>%
+  mutate (sex = ifelse (sex == 1, "f", "m"),
+          wt = str_replace(wt, ",", ".") %>% as.numeric (),
+          ht = str_replace(ht, ",", ".")%>% as.numeric ()) %>%
+  mutate_if(is.character, ~tolower (.))
+```
+
+
+## modify identifier
+
+```{r}
+
+id <- list_of_files_raw  %>%
+  tolower() %>%
+  str_remove(".txt") %>%
+  str_remove("_scalar")%>%
+  str_remove("_gait")
+
+```
+
+
+## Modify each item in list wide to long
+
+
+```{r}
+
+plan (multisession)
+
+empty_elements <- df.list %>%
+  future_map_lgl (~ nrow (.) == 0) 
+
+df2.list <- df.list[!empty_elements] %>%
+  future_map (~gather_reps_cols2rows (.))
+
+```
+
+## Restructure data
+
+```{r message=FALSE, warning=FALSE}
+
+registerDoParallel(cores = 6)
+
+df3.list  <- foreach(f = 1:length(df2.list), .packages="tidyverse")%dopar% {
+  
+  # split identifier
+ id.df <- data.frame (id = id[f]) %>%
+   separate(id, into = c("subj", "cond", "side", "joint", "var"), sep = "_")
+ 
+ # merge with demograph data
+ df.temp <- df2.list [[f]] %>%
+   add_column(!!! id.df, .before = "ITEM") %>%
+   mutate (reps = as.numeric(reps)) %>%
+   mutate_if(is.character, ~tolower (.)) %>%
+   rename (cycle = ITEM,
+           pwr = X) 
+ 
+ return (df.temp)
+
+}
+
+
+vel <- vel.list %>%
+  bind_rows(.id = "subj") %>%
+  mutate (subj = str_remove(subj, "_COM_VEL.txt")) %>%
+  separate(subj, into = c("subj", "cond")) %>%
+  rename (speed = X) %>%
+  dplyr::select(-ITEM) %>%
+  mutate_if(is.character, tolower)
+
+df4 <- df3.list %>%
+  bind_rows () %>%
+  inner_join(vel, by = c("subj", "cond")) %>%
+  inner_join(demo, by = c("subj")) %>%
+  dplyr::select (-c(cond, var))
+
+
+```
+
+## Export data
+ 
+```{r}
+
+file_name <- "df_horst.RDS"
+
+saveRDS(df4, file = file.path(output_dir, file_name))
+
 ```
