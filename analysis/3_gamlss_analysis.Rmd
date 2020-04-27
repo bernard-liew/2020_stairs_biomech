@@ -50,18 +50,14 @@ df <- readRDS (file.path(output_dir, file_name))
 
 ```{r}
 
-df_walk <- df %>%
-  filter (task == "walking") %>%
-  mutate (subj = factor (subj))
+df_ankle <- df  %>%
+  filter (joint == "ankle") 
 
-df_walk_apwr <- df_walk  %>%
-  filter (var_axis == "anklepwr") 
+df_knee <- df %>%
+  filter (joint  == "knee")
 
-df_walk_kpwr <- df_walk  %>%
-  filter (var_axis == "kneepwr")
-
-df_walk_hpwr <- df_walk  %>%
-  filter (var_axis == "hippwr")
+df_hip <- df  %>%
+  filter (joint  == "hip")
 
 ```
 
@@ -70,24 +66,55 @@ df_walk_hpwr <- df_walk  %>%
 ## Power against cycle
 
 ```{r}
-windows()
-df_walk %>%
-  filter (var_axis %in% c("AnklePwr", "KneePwr", "HipPwr")) %>%
+
+
+fig_name <- "explore_power_cycle.tiff"
+
+
+tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
+
+df %>%
   ggplot () +
   geom_point (aes (x = cycle, y = val)) +
-  facet_wrap(side ~ var_axis)
+  facet_wrap( ~ joint)
+
+dev.off()
 
 ```
 
 ## Power against age
 
 ```{r}
-windows()
-df_walk %>%
-  filter (var_axis %in% c("AnklePwr", "KneePwr", "HipPwr")) %>%
+
+fig_name <- "explore_power_age.tiff"
+
+
+tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
+
+df %>%
   ggplot () +
   geom_point (aes (x = age, y = val)) +
-  facet_wrap(side ~ var_axis)
+  facet_wrap( ~ joint)
+
+dev.off()
+
+```
+
+## Power against age
+
+```{r}
+
+fig_name <- "explore_power_speed.tiff"
+
+
+tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
+
+df %>%
+  ggplot () +
+  geom_point (aes (x = speed, y = val)) +
+  facet_wrap( ~ joint)
+
+dev.off()
 
 ```
 
@@ -95,12 +122,17 @@ df_walk %>%
 
 ```{r}
 
-windows()
-df_walk %>%
-  filter (var_axis %in% c("AnklePwr", "KneePwr", "HipPwr")) %>%
+fig_name <- "explore_power_hist.tiff"
+
+
+tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
+
+df %>%
   ggplot () +
-  geom_histogram (aes (val), binwidth = 1) +
-  facet_wrap(side ~ var_axis)
+  geom_histogram (aes (val), bins = 200) +
+  facet_wrap( ~ joint)
+
+dev.off()
 
 ```
 
@@ -108,31 +140,41 @@ df_walk %>%
 
 ```{r}
 
-windows()
-df_walk %>%
-  filter (var_axis %in% c("AnklePwr", "KneePwr", "HipPwr")) %>%
+fig_name <- "explore_power_sex.tiff"
+
+
+tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
+
+df %>%
   ggplot () +
   geom_boxplot(aes (x = sex, y = val)) +
-  facet_wrap(side ~ var_axis)
+  facet_wrap( ~ joint)
+
+dev.off()
+
 
 ```
 
+# GAMLSS modelling
+
+## ankle
 
 ```{r}
-df_walk_apwr_ave <-df_walk_apwr  %>%
-  group_by(subj, sex, age, side, cycle) %>%
-  summarize (val = mean (val, na.rm = TRUE),
-             speed = mean (speed, na.rm = TRUE),
-             strlen = mean (strlen, na.rm = TRUE),
-             cadence = mean (cadence, na.rm = TRUE)) %>%
-  ungroup () %>%
+set.seed(123)
+n_subj <- unique (df_ankle$subj)
+
+rand_subj <- sample(n_subj, 200)
+
+df_ankle <- df_ankle %>%
+  filter (cycle %in% seq(1, 101, 3),
+          subj %in% rand_subj) %>%
   as.data.frame()
 
-m0 <- gamlss(val ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
-             sigma.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
-             nu.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
-             tau.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
-             data = df_walk_apwr_ave,
+# Smoother for mu
+m0 <- gamlss(val ~ sex + ga (~ te(cycle, age, speed)) + re (random = ~ 1|study),
+             sigma.fo = ~ sex + ga (~ te(cycle, age, speed)) + re (random = ~ 1|study),
+             data = df_ankle,
+             c.crit = 0.1,
              trace = FALSE)
 
 m0 <- gamlss(val ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
@@ -143,20 +185,6 @@ m0 <- gamlss(val ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)
              family = TF,
              trace = FALSE)
 
-
-# main smoothing effects 
-m0 <- gamlss(val ~ pb(cycle) + pb(age) + re(random = ~1|subj), data=df_walk_apwr, family = NO, trace=FALSE)
-# linear interaction 
-m1 <- gamlss(val ~ pb(cycle) + pb(age) + cycle:age + re(random = ~1|subj), data=df_walk_apwr, family = NO, trace=FALSE)
-# varying coefficients interaction 
-m2 <- gamlss(val ~ pb(cycle) + pb(age) + pvc (cycle, by = age) + re(random = ~1|subj), data=df_walk_apwr, family = NO, trace=FALSE)
-m3 <- gamlss(val ~ speed + pb(cycle) + pb(age) + pvc (age, by = cycle),
-             sigma.fo = ~ pb(cycle) + pb(age) ,
-             data=df_walk_apwr_ave, family = NO, trace=FALSE)
-# linear interaction plus varying coefficients interaction
-m4 <- gamlss(val ~ pb(cycle) + pb(age) + cycle:age + pvc (cycle, by = age) + re(random = ~1|subj), data=df_walk_apwr, family = NO, trace=FALSE)
-
-AIC(m0, m1,m2,m3, m4)
 
 ```
 
