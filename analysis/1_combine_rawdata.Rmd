@@ -163,7 +163,7 @@ saveRDS(df, file = file.path(output_dir, file_name))
 
 raw_dir <- "../../gait_database/data_fukuchi/fun"
 
-list_of_files <- list.files(raw_dir, pattern = ".txt")
+list_of_files <- list.files(raw_dir, pattern = glob2rx("*T05*.txt"))
 list_of_files <- list_of_files[!grepl ("bad", list_of_files)]
 
 registerDoParallel(cores = 6)
