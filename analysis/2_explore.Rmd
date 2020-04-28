@@ -88,7 +88,12 @@ temp <- df.list$df_lencioni %>%
           joint = ifelse (var_axis == "anklepwr", "ankle",
                           ifelse (var_axis == "kneepwr", "knee",
                                   "hip"))) %>%
-  dplyr::select (-c(task, strlen, strwid, cadence, var_axis))
+  group_by(subj) %>%
+  mutate (speed_med = median (speed)) %>%
+  filter (speed == speed_med) %>%
+  ungroup () %>%
+  dplyr::select (-c(task, strlen, strwid, cadence, var_axis, speed_med))
+
 
 ```
 
