@@ -48,9 +48,10 @@ source ("code/helper_fun.R")
 
 output_dir <- "output"
 
-file_name <- "df_combined.RDS"
-
 list_of_files <- list.files(output_dir, pattern = ".RDS")
+incl_studies <- c("fukuchi|taylor|horst|lencioni")
+
+list_of_files <- list_of_files[grepl (incl_studies, list_of_files)]
 
 df.list <- list()
 
