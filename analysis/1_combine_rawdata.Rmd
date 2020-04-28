@@ -185,6 +185,7 @@ demo <- read_delim("data/fukuchi_demo.txt", "\t",
   rename (subj = subject,
           ht = height,
           wt = mass) %>%
+  filter (speedgrp == "t05") %>%
   dplyr::select (subj, age, sex, cond, ht, wt, speed)
 
 bad_subj <- c(18, 21, 25, 29, 32, 33, 34, 35, 38)
@@ -242,8 +243,8 @@ df3.list  <- foreach(f = 1:length(df2.list), .packages="tidyverse")%dopar% {
 df4 <- df3.list %>%
   bind_rows () %>%
   mutate (subj = str_extract(subj, "[[:digit:]]+") %>% as.numeric) %>%
-  filter (subj != bad_subj) %>%
   inner_join(demo, by = c("subj", "cond")) %>%
+  filter (subj != bad_subj) %>%
   dplyr::select (-c(cond, var))
 
 
