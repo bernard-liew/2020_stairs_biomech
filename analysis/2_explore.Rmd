@@ -474,7 +474,7 @@ df <- df.list %>%
 age_cut <- seq (5, 95, 10)
 age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
 
-speed_cut <- seq (0.25, 2.35, 0.35)
+speed_cut <- seq (0.80, 2.0, 0.4)
 speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
 
 df_plot <- df %>%
