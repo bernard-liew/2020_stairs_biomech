@@ -507,6 +507,179 @@ dev.off()
 
 ```
 
+# Explore distributions
+
+## Power against cycle
+
+```{r}
+
+
+fig_name <- "explore_power_cycle.tiff"
+
+
+tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
+
+df %>%
+  ggplot () +
+  geom_point (aes (x = cycle, y = val)) +
+  facet_wrap( ~ joint)
+
+dev.off()
+
+```
+
+## Power against age
+
+```{r}
+
+fig_name <- "explore_power_age.tiff"
+
+
+tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
+
+df %>%
+  ggplot () +
+  geom_point (aes (x = age, y = val)) +
+  facet_wrap( ~ joint)
+
+dev.off()
+
+```
+
+## Power against Speed
+
+```{r}
+
+fig_name <- "explore_power_speed.tiff"
+
+
+tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
+
+df %>%
+  ggplot () +
+  geom_point (aes (x = speed, y = val)) +
+  facet_wrap( ~ joint)
+
+dev.off()
+
+```
+
+## Histogram of power
+
+```{r}
+
+fig_name <- "explore_power_hist.tiff"
+
+
+tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
+
+df %>%
+  ggplot () +
+  geom_density (aes (val), adjust = 10) +
+  facet_wrap( ~ joint)
+
+dev.off()
+
+```
+
+## Boxplot power against sex
+
+```{r}
+
+fig_name <- "explore_power_sex.tiff"
+
+
+tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
+
+df %>%
+  ggplot () +
+  geom_boxplot(aes (x = sex, y = val)) +
+  facet_wrap( ~ joint)
+
+dev.off()
+
+
+```
+
+## Skewness
+
+### By cycle
+
+```{r}
+df %>%
+  group_by(joint, cycle) %>%
+  summarise(val = skewness (val)) %>%
+  ggplot () +
+  geom_line (aes (x = cycle, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 0)
+```
+
+### By  age
+
+```{r}
+df %>%
+  group_by(joint, age) %>%
+  summarise(val = skewness (val)) %>%
+  ggplot () +
+  geom_line (aes (x = age, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 0)
+
+```
+
+### By speed
+
+```{r}
+df %>%
+  group_by(joint, speed) %>%
+  summarise(val = skewness (val)) %>%
+  ggplot () +
+  geom_line (aes (x = speed, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 0)
+
+```
+
+## Kurtosis
+
+### By cycle
+
+```{r}
+df %>%
+  group_by(joint, cycle) %>%
+  summarise(val = kurtosis (val)) %>%
+  ggplot () +
+  geom_line (aes (x = cycle, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 3)
+```
+
+### By age
+
+```{r}
+df %>%
+  group_by(joint, age) %>%
+  summarise(val = kurtosis (val)) %>%
+  ggplot () +
+  geom_line (aes (x = age, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 3)
+
+```
+
+### By speed
+
+```{r}
+df %>%
+  group_by(joint, speed) %>%
+  summarise(val = kurtosis (val)) %>%
+  ggplot () +
+  geom_line (aes (x = speed, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 3)
+
+```
 
 # Export data
  
