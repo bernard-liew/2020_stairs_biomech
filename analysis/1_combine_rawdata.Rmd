@@ -340,6 +340,8 @@ empty_elements <- df.list %>%
 df2.list <- df.list[!empty_elements] %>%
   future_map (~gather_reps_cols2rows (.))
 
+id2 <- id[!empty_elements] 
+
 ```
 
 ## Restructure data
@@ -351,7 +353,7 @@ registerDoParallel(cores = 6)
 df3.list  <- foreach(f = 1:length(df2.list), .packages="tidyverse")%dopar% {
   
   # split identifier
- id.df <- data.frame (id = id[f]) %>%
+ id.df <- data.frame (id = id2[f]) %>%
    separate(id, into = c("subj", "cond", "side", "joint", "var"), sep = "_")
  
  # merge with demograph data
