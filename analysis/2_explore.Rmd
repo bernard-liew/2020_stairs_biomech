@@ -88,11 +88,13 @@ temp <- df.list$df_lencioni %>%
           joint = ifelse (var_axis == "anklepwr", "ankle",
                           ifelse (var_axis == "kneepwr", "knee",
                                   "hip"))) %>%
-  group_by(subj) %>%
-  mutate (speed_med = median (speed)) %>%
-  filter (speed == speed_med) %>%
+  arrange (subj, speed) %>%
+  group_by(subj)  %>%
+  group_split () %>%
+  map (select_middle) %>%
+  bind_rows() %>%
   ungroup () %>%
-  dplyr::select (-c(task, strlen, strwid, cadence, var_axis, speed_med))
+  dplyr::select (-c(task, strlen, strwid, cadence, var_axis))
 
 
 ```
@@ -474,7 +476,7 @@ df <- df.list %>%
 age_cut <- seq (5, 95, 10)
 age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
 
-speed_cut <- seq (0.80, 2.0, 0.4)
+speed_cut <- seq (0.5, 2.0, 0.5)
 speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
 
 df_plot <- df %>%
