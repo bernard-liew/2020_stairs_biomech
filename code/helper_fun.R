@@ -165,3 +165,30 @@ my_outlier <- function (x) {
   return(outData)
   
 }
+
+
+select_middle <- function(x) {
+  
+  if(n_distinct(x$speed) %% 2 == 0 & n_distinct(x$speed) > 2){
+    
+    slct_speed <- unique (x$speed) 
+    speed_med <- slct_speed[((n_distinct(slct_speed)) / 2) - 1]
+    x2 <- x %>% filter (speed == speed_med)
+    
+  } else if (n_distinct(x$speed) %% 2 == 0 & n_distinct(x$speed) == 2) {
+    
+    slct_speed <- unique (x$speed) 
+    speed_med <- slct_speed[n_distinct(slct_speed) - 1]
+    x2 <- x %>% filter (speed == speed_med)
+    
+  } else {
+    
+    speed_med <- median (unique (x$speed))
+    x2 <- x %>% filter (speed == speed_med)
+    
+  }
+  
+  return (x2)
+  
+}
+
