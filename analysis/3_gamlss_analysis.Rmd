@@ -22,15 +22,22 @@ library (DataExplorer)
 library (janitor)
 library (arsenal)
 library (ggforce)
+library (moments)
 
 # modelling
 library (gamlss)
 library (gamlss.add)
+library (bamlss)
 
 # parallel
 library(doParallel)
 library(foreach)
 library (furrr)
+
+# Plotting
+library (distreg.vis)
+
+
 
 ```
 
@@ -61,131 +68,286 @@ df_hip <- df  %>%
 
 ```
 
-# Explore
-
-## Power against cycle
-
-```{r}
-
-
-fig_name <- "explore_power_cycle.tiff"
-
-
-tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
-
-df %>%
-  ggplot () +
-  geom_point (aes (x = cycle, y = val)) +
-  facet_wrap( ~ joint)
-
-dev.off()
-
-```
-
-## Power against age
-
-```{r}
-
-fig_name <- "explore_power_age.tiff"
-
-
-tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
-
-df %>%
-  ggplot () +
-  geom_point (aes (x = age, y = val)) +
-  facet_wrap( ~ joint)
-
-dev.off()
-
-```
-
-## Power against age
-
-```{r}
-
-fig_name <- "explore_power_speed.tiff"
-
-
-tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
-
-df %>%
-  ggplot () +
-  geom_point (aes (x = speed, y = val)) +
-  facet_wrap( ~ joint)
-
-dev.off()
-
-```
-
-## Histogram of power
-
-```{r}
-
-fig_name <- "explore_power_hist.tiff"
-
-
-tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
-
-df %>%
-  ggplot () +
-  geom_histogram (aes (val), bins = 200) +
-  facet_wrap( ~ joint)
-
-dev.off()
-
-```
-
-## Boxplot power against sex
-
-```{r}
-
-fig_name <- "explore_power_sex.tiff"
-
-
-tiff (width = 10, height = 8, units = "in", res = 200, file = file.path(output_dir,  fig_name))
-
-df %>%
-  ggplot () +
-  geom_boxplot(aes (x = sex, y = val)) +
-  facet_wrap( ~ joint)
-
-dev.off()
-
-
-```
 
 # GAMLSS modelling
 
 ## ankle
 
+### Sample the data
+
 ```{r}
-set.seed(123)
-n_subj <- unique (df_ankle$subj)
 
-rand_subj <- sample(n_subj, 200)
+age_cut <- seq (5, 95, 10)
+age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
 
-df_ankle <- df_ankle %>%
-  filter (cycle %in% seq(1, 101, 3),
-          subj %in% rand_subj) %>%
-  as.data.frame()
+speed_cut <- seq (0.5, 2.0, 0.5)
+speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
 
-# Smoother for mu
-m0 <- gamlss(val ~ sex + ga (~ te(cycle, age, speed)) + re (random = ~ 1|study),
-             sigma.fo = ~ sex + ga (~ te(cycle, age, speed)) + re (random = ~ 1|study),
-             data = df_ankle,
-             c.crit = 0.1,
-             trace = FALSE)
+cycle_cut <- seq (0, 106, 5)
+cycle_labels <- seq (1, 105, 5)
 
-m0 <- gamlss(val ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
-             sigma.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
-             nu.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
-             tau.fo = ~ age + speed + sex + ga (~ s(age) + s(cycle) + te (cycle, age)),
-             data = df_walk_apwr_ave,
-             family = TF,
-             trace = FALSE)
+df_ankle_downsamp <- df_ankle %>%
+  filter (cycle %in% seq (1, 101, 3))
+
+add_cat <-  df_ankle_downsamp %>%
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels),
+          speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
+  group_by(age_cat, speed_cat) 
+
+min_sample <- add_cat %>%
+  tally () %>%
+  pull (n) %>%
+  min()
+
+df_ankle_sub <- add_cat %>%
+  sample_n (min_sample)
 
 
 ```
 
 
+### find optimal distribution
+
+```{r}
+
+m0 <- fitDist(val, data = df_ankle_sub, type = "realline")
+m0$fits
+
+
+saveRDS(m0, file.path(output_dir, "ankle_gamlss_m0.RDS"))
+```
+
+### explore models
+
+```{r}
+
+# tensor
+m1 <- gamlss(val ~  ga (~ te(cycle, age, speed)),
+             sigma.fo = ~ ga (~ te(cycle, age, speed)),
+             family = SHASH,
+             data = df_ankle_sub,
+             c.crit = 0.1,
+             trace = FALSE)
+
+saveRDS(m1, file.path(output_dir, "ankle_gamlss_m1.RDS"))
+
+m2 <- gamlss(val ~ ga (~ te(cycle, age, speed)),
+             family = SEP2,
+             data = df_ankle_sub,
+             c.crit = 0.1,
+             trace = FALSE)
+
+saveRDS(m2, file.path(output_dir, "ankle_gamlss_m2.RDS"))
+
+m3 <- gamlss(val ~ ga (~ te(cycle, age, speed)),
+             sigma.fo = ~ ga (~ te(cycle, age, speed)),
+             nu.fo = ~  ga (~ te(cycle, age, speed)) ,
+             #tau.fo = ~ ga (~ te(cycle, age, speed)) ,
+             family = SEP2,
+             data = df_ankle_sub,
+             c.crit = 0.1,
+             trace = FALSE)
+
+saveRDS(m3, file.path(output_dir, "ankle_gamlss_m3.RDS"))
+
+m4 <- gamlss(val ~ pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             family = SHASH,
+             data = df_ankle_sub,
+             c.crit = 0.1,
+             trace = FALSE)
+
+saveRDS(m4, file.path(output_dir, "ankle_gamlss_m4.RDS"))
+
+m5 <- gamlss(val ~ pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             sigma.fo = ~ pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             family = SHASH,
+             data = df_ankle_sub,
+             c.crit = 0.1,
+             trace = FALSE)
+
+saveRDS(m5, file.path(output_dir, "ankle_gamlss_m5.RDS"))
+
+m6 <- gamlss(val ~ sex + pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             sigma.fo = ~ pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             family = SHASH,
+             data = df_ankle_sub,
+             c.crit = 0.001,
+             trace = FALSE)
+
+saveRDS(m6, file.path(output_dir, "ankle_gamlss_m6.RDS"))
+
+m7 <- gamlss(val ~ sex + pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             sigma.fo = ~ pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             family = SHASH,
+             data = df_ankle_downsamp,
+             c.crit = 0.001,
+             trace = FALSE)
+
+saveRDS(m7, file.path(output_dir, "ankle_gamlss_m7.RDS"))
+
+
+```
+
+## knee
+
+### Sample the data
+
+```{r}
+
+df_knee_downsamp <- df_knee %>%
+  filter (cycle %in% seq (1, 101, 3))
+
+add_cat <-  df_knee_downsamp %>%
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels),
+          speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
+  group_by(age_cat, speed_cat) 
+
+min_sample <- add_cat %>%
+  tally () %>%
+  pull (n) %>%
+  min()
+
+df_knee_sub <- add_cat %>%
+  sample_n (min_sample)
+
+
+```
+
+
+### find optimal distribution
+
+```{r}
+
+m0 <- fitDist(val, data = df_knee_sub, type = "realline")
+m0$fits
+
+
+saveRDS(m0, file.path(output_dir, "knee_gamlss_m0.RDS"))
+```
+
+### explore models
+
+```{r}
+
+
+m1 <- gamlss(val ~  ga (~ te(cycle, age, speed)),
+             sigma.fo = ~ ga (~ te(cycle, age, speed)),
+             family = SEP1,
+             data = df_knee_sub,
+             c.crit = 0.1,
+             trace = FALSE)
+
+saveRDS(m1, file.path(output_dir, "knee_gamlss_m1.RDS"))
+
+
+m2 <- gamlss(val ~ pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             family = SEP1,
+             data = df_knee_sub,
+             c.crit = 0.1,
+             trace = FALSE)
+
+saveRDS(m2, file.path(output_dir, "knee_gamlss_m2.RDS"))
+
+
+m3 <- gamlss(val ~ sex + pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             family = SEP1,
+             data = df_knee_downsamp,
+             c.crit = 0.001,
+             trace = FALSE)
+
+saveRDS(m3, file.path(output_dir, "knee_gamlss_m3.RDS"))
+
+
+```
+
+## hip
+
+### Sample the data
+
+```{r}
+
+df_hip_downsamp <- df_hip %>%
+  filter (cycle %in% seq (1, 101, 3))
+
+add_cat <-  df_hip_downsamp %>%
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels),
+          speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
+  group_by(age_cat, speed_cat) 
+
+min_sample <- add_cat %>%
+  tally () %>%
+  pull (n) %>%
+  min()
+
+df_hip_sub <- add_cat %>%
+  sample_n (min_sample)
+
+
+```
+
+
+### find optimal distribution
+
+```{r}
+
+m0 <- fitDist(val, data = df_hip_sub, type = "realline")
+m0$fits
+
+
+saveRDS(m0, file.path(output_dir, "hip_gamlss_m0.RDS"))
+```
+
+### explore models
+
+```{r}
+
+
+m1 <- gamlss(val ~  ga (~ te(cycle, age, speed)),
+             sigma.fo = ~ ga (~ te(cycle, age, speed)),
+             family = SHASH,
+             data = df_hip_sub,
+             c.crit = 0.1,
+             trace = FALSE)
+
+saveRDS(m1, file.path(output_dir, "hip_gamlss_m1.RDS"))
+
+
+m2 <- gamlss(val ~ pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             family = SEP1,
+             data = df_hip_sub,
+             c.crit = 0.1,
+             trace = FALSE)
+
+saveRDS(m2, file.path(output_dir, "hip_gamlss_m2.RDS"))
+
+m3 <- gamlss(val ~ pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             sigma.fo = ~ pb (cycle) + pb (age) + pb(speed) + 
+               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
+             family = SEP1,
+             data = df_hip_sub,
+             c.crit = 0.1,
+             trace = FALSE)
+
+saveRDS(m3, file.path(output_dir, "hip_gamlss_m3.RDS"))
+
+m4 <- gamlss(val ~  ga (~ te(cycle, age, speed)),
+             sigma.fo = ~ ga (~ te(cycle, age, speed)),
+             family = SHASH,
+             data = df_hip_downsamp,
+             c.crit = 0.001,
+             trace = FALSE)
+saveRDS(m4, file.path(output_dir, "hip_gamlss_m4.RDS"))
+
+
+```
