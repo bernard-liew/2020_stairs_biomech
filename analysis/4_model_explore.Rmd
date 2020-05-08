@@ -1,0 +1,72 @@
+---
+title: "4_model_explore"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+  
+# Import library
+  
+```{r}
+
+rm (list = ls())
+
+# Helper
+library (tidyverse)
+
+# Import
+library (rio)
+
+# Exploration 
+library (DataExplorer)
+library (janitor)
+library (arsenal)
+library (ggforce)
+library (moments)
+
+# modelling
+library (gamlss)
+library (gamlss.add)
+library (bamlss)
+
+# parallel
+library(doParallel)
+library(foreach)
+library (furrr)
+
+# Plotting
+library (distreg.vis)
+
+
+
+```
+
+# Import data
+
+```{r}
+
+output_dir <- "output"
+joint <- "ankle"
+model <- "_gamlss_"
+model_num <- "m7"
+
+m7 <- readRDS (file.path(output_dir, paste0 (joint, model, model_num, ".RDS")))
+
+distreg.vis::vis()
+
+newdata <- expand.grid (age = seq(5, 85, 5),
+                       speed = 0.6,
+                       sex = factor ("m", levels = c("m", "f")),
+                       cycle = c(1:101))
+
+newdata$p <- predict (m7, 
+              what = "mu",
+              newdata = newdata,
+              type = "response",
+              data = df_ankle_downsamp)
+
+f <- predict (m7,
+              what = "mu",
+              type = "terms",
+              se.fit = TRUE)
+```
