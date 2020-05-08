@@ -3,4 +3,5 @@
 .RData
 .Ruserdata
 output/*
+manuscript/*
 2020_stairs_biomech.Rproj
