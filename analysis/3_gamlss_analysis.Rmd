@@ -28,6 +28,7 @@ library (moments)
 library (gamlss)
 library (gamlss.add)
 library (bamlss)
+library (bigsplines)
 
 # parallel
 library(doParallel)
@@ -36,6 +37,7 @@ library (furrr)
 
 # Plotting
 library (distreg.vis)
+library (plotly)
 
 
 
@@ -194,6 +196,90 @@ saveRDS(m7, file.path(output_dir, "ankle_gamlss_m7.RDS"))
 
 
 ```
+
+### try smoothing splines
+
+```{r}
+
+num_prm <- 0.01
+ord_prm <- 1
+
+m <- bigssa (val ~ sex+ cycle*speed*age,
+             type=list(sex = "nom", cycle = "per", age = "cub", speed ="cub"),
+             rparm=list(cycle = num_prm, speed = num_prm, age = num_prm, sex = ord_prm),
+             nknots=100,
+             data = df_ankle_downsamp,
+             skip.iter=T)
+
+s <- summary (m, fitresid = TRUE)
+
+plot (s$fitted.values, s$residuals)
+
+# plot results --------------------------
+
+
+plot_res <- function (model, cycle, age, speed) {
+  
+  newdata <- expand.grid(cycle = cycle,
+                       age = age,
+                       speed = speed)
+  
+  yhat = predict(model,
+               newdata = newdata,
+               se.fit=TRUE,
+               include= c("age", "cycle", "speed"),
+               includeint=T)
+  
+  yhat_df <- bind_rows(yhat) %>%
+    bind_cols(newdata) %>%
+    mutate (lwr = fit - 2*se.fit,
+            upr = fit + 2*se.fit)
+  
+  zlist <- list (yhat = yhat_df ,
+                 z = matrix (yhat_df[, "fit"] %>% pull(), nrow = length (cycle), ncol = length (age)),
+                 z_lwr = matrix (yhat_df[, "lwr"] %>% pull(), nrow = length (cycle), ncol = length (age)),
+                 z_upr = matrix (yhat_df[, "upr"] %>% pull(), nrow = length (cycle), ncol = length (age))
+                 )
+  
+  return (zlist)
+  
+}
+
+cycle <- 1:101
+age <- 5:85
+slow <- 0.7
+mod <- 1.2
+fast <- 1.8
+
+surface_slow <- plot_res(model = m, cycle = cycle, age = age, speed = slow)
+surface_mod <- plot_res(model = m, cycle = cycle, age = age, speed = mod)
+surface_fast <- plot_res(model = m, cycle = cycle, age = age, speed = fast)
+
+f_slow <- plot_ly(showscale = FALSE, scene='scene1') %>%
+  add_surface(z = ~ surface_slow$z) %>%
+  add_surface(z = ~ surface_slow$z_lwr, opacity = 0.5) %>%
+  add_surface(z = ~ surface_slow$z_upr, opacity = 0.5) 
+
+f_mod<- plot_ly(showscale = FALSE, scene='scene2') %>%
+  add_surface(z = ~ surface_mod$z) %>%
+  add_surface(z = ~ surface_mod$z_lwr, opacity = 0.5) %>%
+  add_surface(z = ~ surface_mod$z_upr, opacity = 0.5)
+
+
+f_fast <- plot_ly(showscale = FALSE, scene = "scene3") %>%
+  add_surface(z = ~ surface_fast$z) %>%
+  add_surface(z = ~ surface_fast$z_lwr, opacity = 0.5) %>%
+  add_surface(z = ~ surface_fast$z_upr, opacity = 0.5) 
+
+f <- subplot(f_slow, f_mod, f_fast, shareX = TRUE, shareY = TRUE) %>%
+  layout (title = "ankle power over age",
+          scene1 = list(
+      xaxis = list(title = "Age (yo)", range = c(85,5)),
+      yaxis = list(title = "Cycle (1 - 100%"),
+      zaxis = list(title = "Power (W/kg)")))
+      
+```
+
 
 ## knee
 
