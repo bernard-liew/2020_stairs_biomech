@@ -12,13 +12,13 @@ ord_prm <- 1
 m <- bigssa (val ~ sex+ cycle*speed*age,
              type=list(sex = "nom", cycle = "per", age = "cub", speed ="cub"),
              rparm=list(cycle = num_prm, speed = num_prm, age = num_prm, sex = ord_prm),
-             nknots=1000,
-             data = df_ankle,
+             nknots=100,
+             data = df_ankle_downsamp,
              skip.iter=T)
 
-summ <- summary (m, fitresid = TRUE)
+s <- summary (m, fitresid = TRUE)
 
-plot (summ$fitted.values, summ$residuals)
+plot (s$fitted.values, s$residuals)
 
 
 
@@ -26,12 +26,11 @@ m1 <- bigssp (val ~ sex+ cycle*speed*age,
              type=list(sex = "nom", cycle = "per", age = "cub", speed ="prm"),
              rparm=list(cycle = num_prm, speed = num_prm, age = num_prm, sex = ord_prm),
              nknots = 100,
-             data = df_ankle,
+             data = df_ankle_downsamp,
              skip.iter=T)
 
-summ <- summary (m1, fitresid = TRUE)
-windows()
-plot (summ$fitted.values, summ$residuals)
+s1 <- summary (m1, fitresid = TRUE)
+plot (s1$fitted.values, s1$residuals)
 
 m2 <- bigssp (log (val) ~ sex+ cycle*speed*age,
               type=list(sex = "nom", cycle = "per", age = "cub", speed ="prm"),
@@ -48,7 +47,7 @@ plot (summ$fitted.values, summ$residuals)
 
 newdata <- expand.grid(cycle = c(1:101),
                        age = seq (5, 85, 1),
-                       speed = 1)
+                       speed = 0.7)
 yhat = predict(m,
                newdata = newdata,
                se.fit=TRUE,
@@ -106,4 +105,31 @@ persp3D(x = c(1:101),
 
 plotrgl()
 
+fig <- plot_ly(showscale = FALSE)
+fig <- fig %>% add_surface(z = ~z)
+fig <- fig %>% add_surface(z = ~z_lwr, opacity = 0.98)
+fig <- fig %>% add_surface(z = ~z_upr, opacity = 0.98)
+fig
+
 writeWebGL(filename = file.path("output", "ankle_pwr.html"))
+
+f <- list (val ~ sex + s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr") + 
+             ti(cycle, age, k = 15, bs = "cr") + ti(cycle, speed, k = 15, bs = "cr") + ti(age, speed, k = 10, bs = "cr"),
+           sigma ~ sex + s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr") + 
+             ti(cycle, age, k = 15, bs = "cr") + ti(cycle, speed, k = 15, bs = "cr") + ti(age, speed, k = 10, bs = "cr"))
+
+f2 <- list (val ~ sex + s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr") + 
+             ti(cycle, age, k = 15, bs = "cr") + ti(cycle, speed, k = 15, bs = "cr") + ti(age, speed, k = 10, bs = "cr"),
+           sigma ~ s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr"),
+           nu ~ s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr"),
+           tau ~ s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr"))
+
+b <- bamlss (f,
+             data = df_ankle_downsamp,
+             family = SHASH,
+             binning = TRUE)
+
+b1 <- bamlss (f2,
+             data = df_ankle_downsamp,
+             family = SHASH,
+             binning = TRUE)
