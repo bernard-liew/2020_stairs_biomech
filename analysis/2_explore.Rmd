@@ -38,7 +38,7 @@ library (furrr)
 
 # custom 
 
-source ("code/helper_fun.R")
+source ("../code/helper_fun.R")
 
 ```
 
@@ -46,7 +46,7 @@ source ("code/helper_fun.R")
 
 ```{r}
 
-output_dir <- "output"
+output_dir <- "../output"
 
 list_of_files <- list.files(output_dir, pattern = ".RDS")
 incl_studies <- c("fukuchi|taylor|horst|lencioni")
@@ -193,10 +193,12 @@ for (n in seq_along(unique (temp2$joint))) {
 
 temp3 <- temp2 %>%
   na.omit() %>%
-  pivot_longer(cols = c("1":"101"),
+  pivot_longer(cols = c(`1`:`101`),
                names_to = "cycle",
-               names_ptypes = list (cycle = numeric()),
+               # names_ptypes = list (cycle = numeric()),
                values_to = "val")
+
+temp3$cycle <- parse_number(temp3$cycle)
 ```
 
 
@@ -293,8 +295,9 @@ temp3 <- temp2 %>%
   na.omit() %>%
   pivot_longer(cols = c("1":"101"),
                names_to = "cycle",
-               names_ptypes = list (cycle = numeric()),
+               # names_ptypes = list (cycle = numeric()),
                values_to = "val")
+temp3$cycle <- parse_number(temp3$cycle)
 ```
 
 
@@ -393,8 +396,9 @@ temp3 <- temp2 %>%
   na.omit() %>%
   pivot_longer(cols = c("1":"101"),
                names_to = "cycle",
-               names_ptypes = list (cycle = numeric()),
+               # names_ptypes = list (cycle = numeric()),
                values_to = "val")
+temp3$cycle <- parse_number(temp3$cycle)
 ```
 
 

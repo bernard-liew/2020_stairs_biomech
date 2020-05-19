@@ -45,7 +45,7 @@ library (distreg.vis)
 
 ```{r}
 
-output_dir <- "output"
+output_dir <- "../output"
 joint <- "ankle"
 model <- "_gamlss_"
 model_num <- "m7"

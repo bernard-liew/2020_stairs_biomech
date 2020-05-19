@@ -47,7 +47,7 @@ library (plotly)
 
 ```{r}
 
-output_dir <- "output"
+output_dir <- "../output"
 file_name <- "df_clean.RDS"
 
 df <- readRDS (file.path(output_dir, file_name))
