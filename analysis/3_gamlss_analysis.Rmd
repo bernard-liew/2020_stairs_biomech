@@ -68,6 +68,10 @@ df_knee <- df %>%
 df_hip <- df  %>%
   filter (joint  == "hip")
 
+df_ankle[c("study","subj","sex")] <- lapply(df_ankle[c("study","subj","sex")], factor)
+df_knee[c("study","subj","sex")] <- lapply(df_knee[c("study","subj","sex")], factor)
+df_hip[c("study","subj","sex")] <- lapply(df_hip[c("study","subj","sex")], factor)
+
 ```
 
 
@@ -446,11 +450,10 @@ form_right = paste(c("~ ba (~ te(cycle, age, speed)",
                    "s(study, bs = 're')",
                    "sex + s(wt) + s(ht))"),
                    collapse = " + ")
-
-df_ankle[c("study","subj","sex")] <- lapply(df_ankle[c("study","subj","sex")], as.factor)
+form_right2 = "~ te(cycle, age, speed) + sex + s(wt) + s(ht)"
 
 m1 <- gamlss(as.formula(paste0("val ", form_right)),
-             sigma.fo = as.formula(form_right),
+             sigma.fo = as.formula(form_right2),
              family = NO(),
              data = df_ankle,
              trace = FALSE)
@@ -459,10 +462,9 @@ m1_rec <- chooseDist(object = m1, type = "realline")
 saveRDS(m1, file.path(output_dir, "ankle_gamlss_m1_NO.RDS"))
 saveRDS(m1_rec, file.path(output_dir, "ankle_gamlss_m1_rec.RDS"))
 
-df_knee[c("study","subj","sex")] <- lapply(df_knee[c("study","subj","sex")], as.factor)
 
 m2 <- gamlss(as.formula(paste0("val ", form_right)),
-             sigma.fo = as.formula(form_right),
+             sigma.fo = as.formula(form_right2),
              family = NO(),
              data = df_knee,
              trace = FALSE)
@@ -471,10 +473,10 @@ m2_rec <- chooseDist(object = m2, type = "realline")
 saveRDS(m2, file.path(output_dir, "knee_gamlss_m2_NO.RDS"))
 saveRDS(m2_rec, file.path(output_dir, "knee_gamlss_m2_rec.RDS"))
 
-df_hip[c("study","subj","sex")] <- lapply(df_hip[c("study","subj","sex")], as.factor)
+
 
 m3 <- gamlss(as.formula(paste0("val ", form_right)),
-             sigma.fo = as.formula(form_right),
+             sigma.fo = as.formula(form_right2),
              family = NO(),
              data = df_hip,
              trace = FALSE)
@@ -482,5 +484,23 @@ m3 <- gamlss(as.formula(paste0("val ", form_right)),
 m3_rec <- chooseDist(object = m3, type = "realline")
 saveRDS(m3, file.path(output_dir, "hip_gamlss_m3_NO.RDS"))
 saveRDS(m3_rec, file.path(output_dir, "hip_gamlss_m3_rec.RDS"))
+```
+
+### GAMLSS with mgcv
+
+```{r}
+m1 <- gam(list(
+  val  ~ 
+    te(cycle, speed) + 
+    te(cycle, age) + 
+    te(age, speed) + 
+    s(subj, by = study, bs = "re") + 
+    s(study, bs = "re") + 
+    sex + 
+    s(wt) + s(ht),
+  ~s(cycle)),
+  family = gaulss(),
+  data = df_ankle)
+  
 ```
 
