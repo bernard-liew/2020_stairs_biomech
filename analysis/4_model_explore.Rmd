@@ -1,9 +1,16 @@
 ---
 title: "4_model_explore"
-output: html_notebook
-editor_options: 
+output:
+  pdf_document: default
+  html_notebook: default
+editor_options:
   chunk_output_type: console
 ---
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(comment=NA, message=FALSE, echo=FALSE, fig.height=4, fig.width=4)
+```
+
   
 # Import library
   
@@ -43,7 +50,7 @@ library (distreg.vis)
 
 # Import data
 
-```{r}
+```{r, eval = FALSE}
 
 output_dir <- "../output"
 joint <- "ankle"
@@ -69,4 +76,85 @@ f <- predict (m7,
               what = "mu",
               type = "terms",
               se.fit = TRUE)
+
+```
+
+# Analyse best models
+
+## Ankle
+
+```{r}
+output_dir <- "../output"
+joint <- "ankle"
+model_name <- "best_model_"
+
+df <- readRDS (file.path(output_dir, paste0("df_", joint,".RDS")))
+model <- readRDS (file.path(output_dir, paste0 (model_name, joint, ".RDS")))
+
+summary(model)
+
+# plot(model)
+# # because the plot takes very long
+# Sys.sleep(10)
+
+assign(paste0("df_",joint), df)
+
+par(mfrow=c(2,2))
+term.plot(model, pages = 2)
+
+rm(model)
+
+gc()
+```
+
+## Hip
+
+```{r}
+output_dir <- "../output"
+joint <- "hip"
+model_name <- "best_model_"
+
+df <- readRDS (file.path(output_dir, paste0("df_", joint,".RDS")))
+model <- readRDS (file.path(output_dir, paste0 (model_name, joint, ".RDS")))
+
+summary(model)
+
+# plot(model)
+# # because the plot takes very long
+# Sys.sleep(10)
+
+assign(paste0("df_",joint), df)
+
+par(mfrow=c(2,2))
+term.plot(model, pages = 2)
+
+rm(model)
+rm(df)
+gc()
+```
+
+## Knee
+
+```{r}
+output_dir <- "../output"
+joint <- "knee"
+model_name <- "best_model_"
+
+df <- readRDS (file.path(output_dir, paste0("df_", joint,".RDS")))
+model <- readRDS (file.path(output_dir, paste0 (model_name, joint, ".RDS")))
+
+summary(model)
+
+# plot(model)
+# # because the plot takes very long
+# Sys.sleep(10)
+
+assign(paste0("df_",joint), df)
+
+par(mfrow=c(2,2))
+term.plot(model, pages = 2)
+
+rm(model)
+rm(df)
+gc()
 ```
