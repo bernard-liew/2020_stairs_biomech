@@ -28,6 +28,7 @@ library (moments)
 library (gamlss)
 library (gamlss.add)
 library (bamlss)
+library( gamlss.dist )
 library (bigsplines)
 
 # parallel
@@ -47,7 +48,7 @@ library (plotly)
 
 ```{r}
 
-output_dir <- "output"
+output_dir <- "../output"
 file_name <- "df_clean.RDS"
 
 df <- readRDS (file.path(output_dir, file_name))
@@ -67,6 +68,14 @@ df_knee <- df %>%
 
 df_hip <- df  %>%
   filter (joint  == "hip")
+
+df_ankle[c("study","subj","sex")] <- lapply(df_ankle[c("study","subj","sex")], factor)
+df_knee[c("study","subj","sex")] <- lapply(df_knee[c("study","subj","sex")], factor)
+df_hip[c("study","subj","sex")] <- lapply(df_hip[c("study","subj","sex")], factor)
+
+saveRDS(df_ankle, file.path(output_dir, "df_ankle.RDS"))
+saveRDS(df_knee, file.path(output_dir, "df_knee.RDS"))
+saveRDS(df_hip, file.path(output_dir, "df_hip.RDS"))
 
 ```
 
@@ -437,3 +446,153 @@ saveRDS(m4, file.path(output_dir, "hip_gamlss_m4.RDS"))
 
 
 ```
+
+### GAMLSS with time interaction, REs and data-driven distribution choice
+
+```{r}
+form_right = paste(c("~ ba (~ te(cycle, speed)",
+                     "te(cycle, age)",
+                     "te(age, speed)", 
+                     "s(subj, by = study, bs = 're')",
+                     "s(study, bs = 're')",
+                     "sex",
+                     "s(wt) + s(ht))"),
+                   collapse = " + ")
+form_right2 = "~ ba( ~ s(cycle))"
+
+
+
+fams <- c(
+  "NO", "GU", "RG" ,"LO", "NET", "TF", "TF2", "PE","PE2", 
+  "SN1", "SN2", "exGAUS", "SHASH", "SHASHo","SHASHo2", 
+  "EGB2", "JSU", "JSUo", "SEP1", "SEP2", "SEP3", "SEP4", 
+  "ST1", "ST2", "ST3", "ST4", "ST5", "SST", "GT"
+)
+
+models <- mclapply(fams, function(fam)
+  m1 <- try(gamlss(as.formula(paste0("val ", form_right)),
+               sigma.fo = as.formula(form_right2),
+               family = fam,
+               data = df_ankle,
+               trace = FALSE)),
+  mc.cores = 29
+)
+
+saveRDS(models, file.path(output_dir, "ankle_gamlss_models.RDS"))
+rm(models)
+gc()
+
+
+models <- mclapply(fams, function(fam)
+  m1 <- try(gamlss(as.formula(paste0("val ", form_right)),
+               sigma.fo = as.formula(form_right2),
+               family = fam,
+               data = df_knee,
+               trace = FALSE)),
+  mc.cores = 29
+)
+
+saveRDS(models, file.path(output_dir, "knee_gamlss_models.RDS"))
+
+rm(models)
+gc()
+
+models <- mclapply(fams, function(fam)
+  m1 <- try(gamlss(as.formula(paste0("val ", form_right)),
+               sigma.fo = as.formula(form_right2),
+               family = fam,
+               data = df_hip,
+               trace = FALSE)),
+  mc.cores = 29
+)
+
+saveRDS(models, file.path(output_dir, "hip_gamlss_models.RDS"))
+
+dev_knee <- sapply(readRDS(file.path(output_dir, "knee_gamlss_models.RDS")), "[", "G.deviance")
+dev_ankle <- sapply(readRDS(file.path(output_dir, "ankle_gamlss_models.RDS")), "[", "G.deviance")
+dev_hip <- sapply(readRDS(file.path(output_dir, "hip_gamlss_models.RDS")), "[", "G.deviance")
+
+res <- data.frame(
+  distribution = fams,
+  knee = unlist(dev_knee),
+  ankle = unlist(dev_ankle),
+  hip = unlist(dev_hip)
+)
+
+saveRDS(res, file.path(output_dir, "final_result.RDS"))
+
+best_model_knee <- gamlss(as.formula(paste0("val ", form_right)),
+                          sigma.fo = as.formula(form_right2),
+                          family = "SST",
+                          data = df_knee,
+                          trace = FALSE)
+
+saveRDS(best_model_knee, file.path(output_dir, "best_model_knee.RDS"))
+
+best_model_ankle <- gamlss(as.formula(paste0("val ", form_right)),
+                         sigma.fo = as.formula(form_right2),
+                         family = "NET",
+                         data = df_ankle,
+                         trace = FALSE)
+
+saveRDS(best_model_ankle, file.path(output_dir, "best_model_ankle.RDS"))
+
+best_model_hip <- gamlss(as.formula(paste0("val ", form_right)),
+                         sigma.fo = as.formula(form_right2),
+                         family = "EGB2",
+                         data = df_hip,
+                         trace = FALSE)
+
+saveRDS(best_model_hip, file.path(output_dir, "best_model_hip.RDS"))
+
+```
+
+### GAMLSS with mgcv
+
+```{r}
+m1 <- gam(list(
+  val  ~ 
+    te(cycle, speed) + 
+    te(cycle, age) + 
+    te(age, speed) + 
+    s(subj, by = study, bs = "re") + 
+    s(study, bs = "re") + 
+    sex + 
+    s(wt) + s(ht),
+  ~s(cycle)),
+  family = gaulss(),
+  data = df_ankle)
+  
+```
+
+### GAMLSS with bamlss
+
+```{r}
+fams <- c(
+   "NO", "GU", "RG" ,"LO", "NET", "TF", "TF2", "PE","PE2", 
+   "SN1", "SN2", "exGAUS", "SHASH", "SHASHo","SHASHo2", 
+   "EGB2", "JSU", "JSUo", "SEP1", "SEP2", "SEP3", "SEP4", 
+   "ST1", "ST2", "ST3", "ST4", "ST5", "SST", "GT"
+)
+
+models <- vector("list", length(fams))
+
+models <- mclapply(fams, function(fam)
+  eval(parse(text = 
+               paste0("bamlss(list(
+    val ~ 
+      te(cycle, speed) + 
+      te(cycle, age) + 
+      te(age, speed) + 
+      s(subj, by = study, bs = 're') + 
+      s(study, bs = 're') + 
+      sex + 
+      s(wt) + s(ht),
+    sigma ~ s(cycle)),
+    family = ",  
+  fam, ", optimizer = boost,
+    data = df_ankle)"))),
+  mc.cores = 29
+)
+```
+
