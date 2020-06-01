@@ -52,7 +52,7 @@ output_dir <- "output"
 
 ```{r}
 
-raw_dir <- "../../gait_database/data_stairs"
+raw_dir <- "../../mocap_database/data_stairs"
 
 list_of_files <- list.files(raw_dir, pattern = ".mat")
 
@@ -101,7 +101,7 @@ saveRDS(df_restruct, file = file.path(output_dir, file_name))
 
 ```{r, eval = FALSE}
 
-raw_dir <- "../../gait_database/data_taylor"
+raw_dir <- "../../mocap_database/data_taylor"
 file_name <- "power_wave.xlsx"
 
 sheets <- readxl::excel_sheets (file.path (raw_dir, file_name))
@@ -161,7 +161,7 @@ saveRDS(df, file = file.path(output_dir, file_name))
 
 ```{r, eval = FALSE}
 
-raw_dir <- "../../gait_database/data_fukuchi/fun"
+raw_dir <- "../../mocap_database/data_fukuchi/fun"
 
 list_of_files <- list.files(raw_dir, pattern = glob2rx("*T05*.txt"))
 list_of_files <- list_of_files[!grepl ("bad", list_of_files)]
@@ -268,7 +268,7 @@ saveRDS(df4, file = file.path(output_dir, file_name))
 
 # Import biomechanics data
 
-raw_dir <- "../../gait_database/data_1/v3d/data/fun"
+raw_dir <- "../../mocap_database/data_1/v3d/data/fun"
 
 list_of_files_raw <- list.files(raw_dir, pattern = ".txt")
 
@@ -285,7 +285,7 @@ names (df.list) <- list_of_files_raw
 
 # Import speed data
 
-vel_dir <- "../../gait_database/data_1/v3d/data"
+vel_dir <- "../../mocap_database/data_1/v3d/data"
 
 list_of_files_vel <- list.files(vel_dir, pattern = "*VEL.txt")
 
@@ -302,7 +302,7 @@ names (vel.list) <- list_of_files_vel
 
 # Import demography data
 
-demo <- readxl::read_excel ("../../gait_database/data_1/Gait_subject_info.xlsx") 
+demo <- readxl::read_excel ("../../mocap_database/data_1/Gait_subject_info.xlsx") 
 
 names (demo) <- c("subj", "sex", "age", "wt", "ht")
 
@@ -391,6 +391,141 @@ df4 <- df3.list %>%
 ```{r}
 
 file_name <- "df_horst.RDS"
+
+saveRDS(df4, file = file.path(output_dir, file_name))
+
+```
+
+# Schreiber data
+
+## Import raw data
+
+```{r, eval = FALSE}
+
+# Import biomechanics data
+
+raw_dir <- "../../mocap_database/data_2/v3d/data/fun"
+
+list_of_files_raw <- list.files(raw_dir, pattern = ".txt")
+
+registerDoParallel(cores = 6)
+
+df.list  <- foreach(f = 1:length(list_of_files_raw), .packages="tidyverse")%dopar% {
+
+  read_tsv (file = file.path (raw_dir, list_of_files_raw [f]), 
+                  col_names = T, 
+                  skip = 4)
+}
+
+names (df.list) <- list_of_files_raw
+
+# Import demography data, 0: woman, 1: man
+
+demo_dir <- "../../mocap_database/data_2/v3d/data/scalar"
+
+list_of_files_demo <- list.files(demo_dir, pattern = "*DEMO.txt")
+
+registerDoParallel(cores = 6)
+
+demo.list  <- foreach(f = 1:length(list_of_files_demo), .packages="tidyverse")%dopar% {
+
+  read_tsv (file = file.path (demo_dir, list_of_files_demo [f]), 
+                  col_names = T, 
+                  skip = 4)
+}
+
+names (demo.list) <- list_of_files_demo
+
+
+```
+
+## modify demography data
+
+```{r}
+
+demo_df <- demo.list  %>%
+  bind_rows(.id = "demo") %>%
+  dplyr::select (-ITEM) %>%
+  rename (speed = `0`,
+          age = `1`,
+          ht = `2`,
+          wt = `3`,
+          sex = `4`) %>%
+  mutate (demo = str_remove(demo, "_DEMO.txt")) %>%
+  separate(demo, into = c("subj", "cond", "trial"), sep = "_") %>%
+  mutate_if(is.character, tolower)
+  
+```
+
+
+## modify identifier
+
+```{r}
+
+id <- list_of_files_raw  %>%
+  tolower() %>%
+  str_remove(".txt") %>%
+  str_remove("_scalar")
+
+```
+
+
+## Modify each item in list wide to long
+
+
+```{r}
+
+plan (multisession)
+
+empty_elements <- df.list %>%
+  future_map_lgl (~ nrow (.) == 0) 
+
+df2.list <- df.list[!empty_elements] %>%
+  future_map (~gather_reps_cols2rows (.))
+
+id2 <- id[!empty_elements] 
+
+```
+
+## Restructure data
+
+```{r message=FALSE, warning=FALSE}
+
+registerDoParallel(cores = 6)
+
+df3.list  <- foreach(f = 1:length(df2.list), .packages="tidyverse")%dopar% {
+  
+  # split identifier
+ id.df <- data.frame (id = id2[f]) %>%
+   separate(id, into = c("subj", "cond", "trial", "side", "joint", "var"), sep = "_")
+ 
+ # merge with demograph data
+ df.temp <- df2.list [[f]] %>%
+   add_column(!!! id.df, .before = "ITEM") %>%
+   mutate (reps = as.numeric(reps)) %>%
+   mutate_if(is.character, ~tolower (.)) %>%
+   rename (cycle = ITEM,
+           pwr = X) 
+ 
+ return (df.temp)
+
+}
+
+
+df4 <- df3.list %>%
+  bind_rows () %>%
+  inner_join(demo_df, by = c("subj", "cond", "trial")) %>%
+  filter (cond == "c4")%>%
+  dplyr::select (-c(cond, var))
+
+
+```
+
+## Export data
+ 
+```{r}
+
+file_name <- "df_schreiber.RDS"
 
 saveRDS(df4, file = file.path(output_dir, file_name))
 
