@@ -400,6 +400,13 @@ temp3 <- temp2 %>%
                # names_ptypes = list (cycle = numeric()),
                values_to = "val")
 temp3$cycle <- parse_number(temp3$cycle)
+
+temp3 <- temp3 %>%
+  group_by(subj, study, side, joint, age, ht, wt, sex, cycle) %>%
+  summarise(val = mean (val, na.rm = TRUE),
+            speed = mean (speed)) %>%
+  ungroup ()
+
 ```
 
 
@@ -541,11 +548,19 @@ df.list$df_fukuchi<- temp3
 ## Average over subj
 
 ```{r}
-
+df.list2 <- list()
 for (n in seq_along(df.list)) {
   
-  df.list[[n]] <- df.list[[n]] %>%
-    group_by(study, subj, age, sex, wt, ht, speed, joint, cycle) %>%
+  df.list2[[n]] <- df.list[[n]] %>%
+    group_by(study, 
+             subj, 
+             age, 
+             sex, 
+             wt, 
+             ht, 
+             speed, 
+             joint, 
+             cycle) %>%
     summarise(val = mean (val, na.rm = TRUE)) %>%
     ungroup ()
   
@@ -558,9 +573,9 @@ for (n in seq_along(df.list)) {
 
 ```{r}
 
-for (n in seq_along(df.list)) {
+for (n in seq_along(df.list2)) {
   
-  df.list[[n]] <- df.list[[n]] %>%
+  df.list2[[n]] <- df.list2[[n]] %>%
     mutate (subj = paste0(study, "_", subj))
   
 }
@@ -570,7 +585,7 @@ for (n in seq_along(df.list)) {
 ## Bind df.list
 
 ```{r}
-df <- df.list %>%
+df <- df.list2 %>%
   bind_rows() %>%
   mutate (sex = str_trim(sex))
 ```
