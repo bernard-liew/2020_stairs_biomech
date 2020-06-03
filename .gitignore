@@ -2,7 +2,16 @@
 .Rhistory
 .RData
 .Ruserdata
-output/*
+output/*.pdf
+output/*.html
+output/*.tiff
+output/*amlss*
+output/*best*
+output/df_fukuchi.RDS
+output/df_horst.RDS
+output/df_taylor.RDS
+output/df_schreiber.RDS
+output/df_lencioni.RDS
 manuscript/*
 analysis/*html
 2020_stairs_biomech.Rproj
