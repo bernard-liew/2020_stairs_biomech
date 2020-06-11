@@ -59,19 +59,50 @@ df <- readRDS (file.path(output_dir, file_name))
 # Subset data
 
 ```{r}
+m_in_cm <- function(x) if(x<100) x * 100 else x
 
 df_ankle <- df  %>%
-  filter (joint == "ankle") 
+  filter (joint == "ankle") %>% 
+  group_by(subj, joint, cycle) %>% 
+  summarise(age = mean(age),
+            sex = sex[1],
+            ht = m_in_cm(mean(ht)),
+            speed = mean(speed),
+            val = mean(val),
+            study = study[1]) %>% 
+  ungroup() %>% 
+  mutate(sex = as.factor(sex),
+         subj = as.factor(subj),
+         study = as.factor(study))
 
 df_knee <- df %>%
-  filter (joint  == "knee")
+  filter (joint  == "knee") %>% 
+  group_by(subj, joint, cycle) %>% 
+  summarise(age = mean(age),
+            sex = sex[1],
+            ht = m_in_cm(mean(ht)),
+            speed = mean(speed),
+            val = mean(val),
+            study = study[1]) %>% 
+  ungroup() %>% 
+  mutate(sex = as.factor(sex),
+         subj = as.factor(subj),
+         study = as.factor(study))
+
 
 df_hip <- df  %>%
-  filter (joint  == "hip")
-
-df_ankle[c("study","subj","sex")] <- lapply(df_ankle[c("study","subj","sex")], factor)
-df_knee[c("study","subj","sex")] <- lapply(df_knee[c("study","subj","sex")], factor)
-df_hip[c("study","subj","sex")] <- lapply(df_hip[c("study","subj","sex")], factor)
+  filter (joint  == "hip") %>% 
+  group_by(subj, joint, cycle) %>% 
+  summarise(age = mean(age),
+            sex = sex[1],
+            ht = m_in_cm(mean(ht)),
+            speed = mean(speed),
+            val = mean(val),
+            study = study[1]) %>% 
+  ungroup() %>% 
+  mutate(sex = as.factor(sex),
+         subj = as.factor(subj),
+         study = as.factor(study))
 
 saveRDS(df_ankle, file.path(output_dir, "df_ankle.RDS"))
 saveRDS(df_knee, file.path(output_dir, "df_knee.RDS"))
@@ -584,15 +615,27 @@ models <- mclapply(fams, function(fam)
       te(cycle, speed) + 
       te(cycle, age) + 
       te(age, speed) + 
-      s(subj, by = study, bs = 're') + 
-      s(study, bs = 're') + 
+      s(subj, bs = 're') + 
       sex + 
-      s(wt) + s(ht),
+      s(ht),
     sigma ~ s(cycle)),
     family = ",  
   fam, ", optimizer = boost,
     data = df_ankle)"))),
   mc.cores = 29
 )
+```
+
+### GAM
+
+```{r}
+mod <- bam(val ~ 
+      te(cycle, speed, age) + 
+      s(subj, bs = 're') + 
+      study + 
+      sex + 
+      s(wt) + s(ht),
+      family = scat(),
+      data = df_ankle)
 ```
 

@@ -1,0 +1,206 @@
+---
+title: "5_model_function"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+  
+# Import library
+  
+```{r}
+
+rm (list = ls())
+
+# Helper
+library (tidyverse)
+
+# Import
+library (rio)
+
+# Exploration 
+library (DataExplorer)
+library (janitor)
+library (arsenal)
+library (ggforce)
+library (moments)
+
+# modelling
+library (gamlss)
+library (gamlss.add)
+library (bamlss)
+library (refund)
+
+# parallel
+library(doParallel)
+library(foreach)
+library (furrr)
+
+# Plotting
+library (distreg.vis)
+
+
+
+```
+
+# Import data
+
+```{r}
+
+output_dir <- "../output"
+file_name <- "df_clean.RDS"
+
+df_ankle <- readRDS(file.path(output_dir, "df_ankle.RDS"))
+df_hip <- readRDS(file.path(output_dir, "df_hip.RDS"))
+df_knee <- readRDS(file.path(output_dir, "df_knee.RDS"))
+
+
+```
+
+# gam model
+
+## Knee
+
+```{r}
+
+mod <- bam(val ~ 
+             ti(cycle, speed) +
+             ti(cycle, age) + 
+             ti(age, speed) + 
+             ti(ht, cycle) + 
+             # ti(ht, age, speed, k = 5) +
+             s(age) + 
+             s(speed) + 
+             s(cycle, k = 40) + 
+             s(cycle, by = study, bs = 're') +
+             s(subj, bs = 're') +
+             sex +
+             s(ht),
+           data = df_knee)
+
+summary(mod)
+gam.check(mod)
+plot(mod)
+
+```
+
+## Ankle
+
+```{r}
+
+mod <- bam(val ~ 
+             ti(cycle, speed) +
+             ti(cycle, age) + 
+             ti(age, speed) + 
+             ti(ht, cycle) + 
+             # ti(ht, age, speed, k = 5) +
+             s(age) + 
+             s(speed) + 
+             s(cycle, k = 40) + 
+             s(cycle, by = study, bs = 're') +
+             s(subj, bs = 're') +
+             sex +
+             s(ht),
+           data = df_ankle)
+
+summary(mod)
+gam.check(mod)
+plot(mod)
+
+```
+
+## Hip
+
+```{r}
+
+mod <- bam(val ~ 
+             ti(cycle, speed) +
+             ti(cycle, age) + 
+             ti(age, speed) + 
+             ti(ht, cycle) + 
+             # ti(ht, age, speed, k = 5) +
+             s(age) + 
+             s(speed) + 
+             s(cycle, k = 40) + 
+             s(cycle, by = study, bs = 're') +
+             s(subj, bs = 're') +
+             sex +
+             s(ht),
+           data = df_hip)
+
+summary(mod)
+gam.check(mod)
+plot(mod)
+
+```
+
+# GAMLSS with t distribution
+
+```{r}
+
+form = "val ~ ba(~
+             ti(cycle, speed) +
+             ti(cycle, age) + 
+             ti(age, speed) + 
+             ti(ht, cycle) + 
+             s(age) + 
+             s(speed) + 
+             s(cycle, k = 40) + 
+             s(cycle, by = study, bs = 're') +
+             s(subj, bs = 're') +
+             sex +
+             s(ht))"
+
+form_scale = "~ ba (~ s(cycle, k = 40) + study)"
+```
+
+
+## Knee
+
+```{r}
+
+gamlss_model_knee <- gamlss(as.formula(form),
+                            sigma.fo = as.formula(form_scale),
+                            family = "TF",
+                            data = df_knee,
+                            trace = TRUE)
+pdf("knee.pdf")
+plot(gamlss_model_knee)
+term.plot(gamlss_model_knee)
+dev.off()
+
+```
+
+
+## Ankle
+
+```{r}
+
+gamlss_model_ankle <- gamlss(as.formula(form),
+                             sigma.fo = as.formula(form_scale),
+                             family = "TF",
+                             data = df_ankle,
+                             trace = TRUE)
+
+pdf("ankle.pdf")
+plot(gamlss_model_ankle)
+term.plot(gamlss_model_ankle)
+dev.off()
+```
+
+
+## Hip
+
+```{r}
+
+gamlss_model_hip <- gamlss(as.formula(form),
+                           sigma.fo = as.formula(form_scale),
+                           family = "TF",
+                           data = df_hip,
+                           trace = TRUE)
+
+pdf("hip.pdf")
+plot(gamlss_model_hip)
+term.plot(gamlss_model_hip)
+dev.off()
+```
+
