@@ -1,0 +1,68 @@
+---
+title: "6_prediction"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+  
+# Import library
+  
+```{r}
+
+rm (list = ls())
+
+# Helper
+library (tidyverse)
+
+# Import
+library (rio)
+
+# Exploration 
+library (DataExplorer)
+library (janitor)
+library (arsenal)
+library (ggforce)
+library (moments)
+
+# modelling
+library (gamlss)
+library (gamlss.add)
+library (gamlss.dist)
+library (bamlss)
+library (refund)
+
+# parallel
+library(doParallel)
+library(foreach)
+library (furrr)
+
+# Plotting
+library (distreg.vis)
+
+
+
+```
+
+# Import data
+
+```{r}
+
+output_dir <- "output"
+
+bmod_a <- readRDS(file.path(output_dir, "bamlss_finalmod_ankle.RDS"))
+bmod_k <- readRDS(file.path(output_dir, "bamlss_finalmod_knee.RDS"))
+bmod_h <- readRDS(file.path(output_dir, "bamlss_finalmod_hip.RDS"))
+
+```
+
+
+# Prediction
+
+## Ankle
+
+### New data
+
+```{r}
+
+```
+
