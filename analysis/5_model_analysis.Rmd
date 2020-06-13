@@ -46,8 +46,7 @@ library (distreg.vis)
 
 ```{r}
 
-output_dir <- "../output"
-file_name <- "df_clean.RDS"
+output_dir <- "output"
 
 df_ankle <- readRDS(file.path(output_dir, "df_ankle.RDS"))
 df_hip <- readRDS(file.path(output_dir, "df_hip.RDS"))
@@ -204,3 +203,81 @@ term.plot(gamlss_model_hip)
 dev.off()
 ```
 
+
+```{r}
+saveRDS(gamlss_model_ankle, "output/gamlss_finalmod_ankle.RDS")
+saveRDS(gamlss_model_knee, "output/gamlss_finalmod_knee.RDS")
+saveRDS(gamlss_model_hip, "output/gamlss_finalmod_hip.RDS")
+```
+
+
+# BAMLSS with t distribution
+
+```{r}
+
+form = "val ~ti(cycle, speed) +
+             ti(cycle, age) + 
+             ti(age, speed) + 
+             ti(ht, cycle) + 
+             s(age) + 
+             s(speed) + 
+             s(cycle, k = 40) + 
+             s(cycle, by = study, bs = 're') +
+             s(subj, bs = 're') +
+             sex +
+             s(ht)"
+
+form_scale = "~ s(cycle, k = 40) + study"
+
+f <- list (val ~ ti(cycle, speed) +
+             ti(cycle, age) + 
+             ti(age, speed) + 
+             ti(ht, cycle) + 
+             s(age) + 
+             s(speed) + 
+             s(cycle, k = 40) + 
+             s(cycle, by = study, bs = 're') +
+             s(subj, bs = 're') +
+             sex +
+             s(ht),
+           sigma ~ s(cycle, k = 40) + study)
+
+```
+
+
+## All joints
+
+```{r}
+bamlss_model_ankle <-  bamlss (f,
+                              data = df_ankle,
+                              family = TF,
+                              n.iter = 11000, 
+                              burnin = 1000, 
+                              thin = 1,
+                              binning = TRUE)
+saveRDS(bamlss_model_ankle, "output/bamlss_finalmod_ankle.RDS")
+
+rm(bamlss_model_ankle)
+
+bamlss_model_knee <-  bamlss (f,
+                              data = df_knee,
+                              family = TF,
+                              n.iter = 11000, 
+                              burnin = 1000, 
+                              thin = 1,
+                              binning = TRUE)
+saveRDS(bamlss_model_knee, "output/bamlss_finalmod_knee.RDS")
+
+rm(bamlss_model_knee)
+
+bamlss_model_hip <-  bamlss (f,
+                              data = df_hip,
+                              family = TF,
+                              n.iter = 11000, 
+                              burnin = 1000, 
+                              thin = 1,
+                              binning = TRUE)
+saveRDS(bamlss_model_hip, "output/bamlss_finalmod_hip.RDS")
+
+
+```
