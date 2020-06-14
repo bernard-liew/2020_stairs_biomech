@@ -63,6 +63,10 @@ bmod_h <- readRDS(file.path(output_dir, "bamlss_finalmod_hip.RDS"))
 ### New data
 
 ```{r}
+nd <- expand.grid(cycle = 1:101,
+                  age = seq(10, 80, 10),
+                  speed = 0.8)
 
+p <- predict (bmod_a, newdata = nd, model = "mu", terms = c("cycle", "age", "speed"), match.names = TRUE, intercept = TRUE)
 ```
 
