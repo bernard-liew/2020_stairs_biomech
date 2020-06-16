@@ -587,7 +587,9 @@ for (n in seq_along(df.list2)) {
 ```{r}
 df <- df.list2 %>%
   bind_rows() %>%
-  mutate (sex = str_trim(sex))
+  mutate (sex = str_trim(sex)) %>%
+  mutate (ht = ifelse (ht > 3, ht / 100, ht))%>%
+  filter (study != "lencioni")
 ```
 
 ## Plot of power over cycle, age, speed
@@ -603,14 +605,14 @@ speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
 df_plot <- df %>%
   mutate (age_cat  = cut (age, age_cut, labels = age_labels),
           speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
-  group_by(speed_cat, age_cat, joint, cycle) %>%
+  group_by(study, speed_cat, age_cat, joint, cycle) %>%
   summarize (val = mean(val, na.rm = TRUE)) %>%
   ungroup ()
 
 
 
 f <- ggplot (data = df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = speed_cat)) +
+  geom_line (aes (x = cycle, y = val, colour = study, linetype = speed_cat)) +
   guides(colour = guide_legend(title="Speed (m/s)")) +
   facet_wrap_paginate(age_cat~joint, ncol = 3, nrow = 2, page = 3)
 
