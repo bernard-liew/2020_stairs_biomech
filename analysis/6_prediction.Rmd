@@ -38,6 +38,7 @@ library (furrr)
 
 # Plotting
 library (distreg.vis)
+library (cowplot)
 
 
 
@@ -50,8 +51,8 @@ library (distreg.vis)
 output_dir <- "output"
 
 bmod_a <- readRDS(file.path(output_dir, "bamlss_finalmod_ankle.RDS"))
-bmod_k <- readRDS(file.path(output_dir, "bamlss_finalmod_knee.RDS"))
-bmod_h <- readRDS(file.path(output_dir, "bamlss_finalmod_hip.RDS"))
+bmod_k <- readRDS(file.path(output_dir, "bamlss_finalmod2_knee.RDS"))
+bmod_h <- readRDS(file.path(output_dir, "bamlss_finalmod2_hip.RDS"))
 
 ```
 
@@ -63,10 +64,255 @@ bmod_h <- readRDS(file.path(output_dir, "bamlss_finalmod_hip.RDS"))
 ### New data
 
 ```{r}
+m <- bmod_a
+
+# The palette with black:
+cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
+          "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+          
 nd <- expand.grid(cycle = 1:101,
                   age = seq(10, 80, 10),
-                  speed = 0.8)
+                  speed = seq(0.8, 1.8, 0.2))
 
-p <- predict (bmod_a, newdata = nd, model = "mu", terms = c("cycle", "age", "speed"), match.names = TRUE, intercept = TRUE)
+p <- predict (m, 
+              newdata = nd, 
+              model = "mu", 
+              term = c("s(cycle)", "s(age)", "s(speed)"), 
+              match.names = FALSE, 
+              intercept = TRUE, 
+              FUN = c95)
+
 ```
 
+### Curves at different age
+
+```{r}
+
+df.plot <- bind_cols(nd, p) %>%
+  mutate (age = factor (age))%>%
+  mutate (speed = factor (speed))
+
+
+f <- ggplot(data = df.plot) +
+  geom_line (aes (x = cycle, y = Mean, colour = age)) +
+  geom_ribbon(aes(x = cycle, ymin = `2.5%`, ymax = `97.5%`, fill = age), alpha = 0.2) +
+  scale_color_manual(values = cbp2) +
+  scale_fill_manual(values = cbp2) +
+  facet_wrap(~speed, ncol = 3, scales = "fixed") + 
+  ylab ("Ankle power (W/kg)") +
+  xlab ("%Stride") +
+  labs (color = "Age(years)") +
+  guides (fill = FALSE) + 
+  theme_half_open()
+
+windows()
+f
+
+
+```
+
+```{r}
+df.plot <- bind_cols(nd, p) %>%
+  mutate (age = factor (age))%>%
+  mutate (speed = factor (speed))%>%
+  group_by(age, speed) %>%
+  mutate (a2 = max (Mean)) %>%
+  ungroup () %>%
+  filter (Mean == a2)
+
+
+f <- ggplot(data = df.plot) +
+  geom_point (aes (x = age, y = Mean, color = age), size = 2) + 
+  geom_errorbar(aes(x = age, ymin = `2.5%`, ymax = `97.5%`, color = age), size = 1) + 
+  scale_color_manual(values = cbp2) +
+  facet_wrap(~speed, ncol = 3, scales = "fixed") + 
+  ylab ("A2 (W/kg)") +
+  xlab ("Age") +
+  labs (color = "Age(years)") +
+  theme_half_open()
+
+
+f
+
+```
+
+## Knee
+
+### New data
+
+```{r}
+m <- bmod_k
+
+# The palette with black:
+cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
+          "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+          
+nd <- expand.grid(cycle = 1:101,
+                  age = seq(10, 80, 10),
+                  speed = seq(0.8, 1.8, 0.2))
+
+p <- predict (m, 
+              newdata = nd, 
+              model = "mu", 
+              term = c("s(cycle)", "s(age)", "s(speed)"), 
+              match.names = FALSE, 
+              intercept = TRUE, 
+              FUN = c95)
+
+```
+
+### Curves at different age
+
+```{r}
+
+df.plot <- bind_cols(nd, p) %>%
+  mutate (age = factor (age))%>%
+  mutate (speed = factor (speed))
+
+
+f <- ggplot(data = df.plot) +
+  geom_line (aes (x = cycle, y = Mean, colour = age)) +
+  geom_ribbon(aes(x = cycle, ymin = `2.5%`, ymax = `97.5%`, fill = age), alpha = 0.2) +
+  scale_color_manual(values = cbp2) +
+  scale_fill_manual(values = cbp2) +
+  facet_wrap(~speed, ncol = 3, scales = "fixed") + 
+  ylab ("Ankle power (W/kg)") +
+  xlab ("%Stride") +
+  labs (color = "Age(years)") +
+  guides (fill = FALSE) + 
+  theme_half_open()
+
+f
+
+
+```
+
+```{r}
+df.plot <- bind_cols(nd, p) %>%
+  mutate (age = factor (age))%>%
+  mutate (speed = factor (speed))%>%
+  group_by(age, speed) %>%
+  mutate (a2 = max (Mean)) %>%
+  ungroup () %>%
+  filter (Mean == a2)
+
+
+f <- ggplot(data = df.plot) +
+  geom_point (aes (x = age, y = Mean, color = age), size = 2) + 
+  geom_errorbar(aes(x = age, ymin = `2.5%`, ymax = `97.5%`, color = age), size = 1) + 
+  scale_color_manual(values = cbp2) +
+  facet_wrap(~speed, ncol = 3, scales = "fixed") + 
+  ylab ("A2 (W/kg)") +
+  xlab ("Age") +
+  labs (color = "Age(years)") +
+  theme_half_open()
+
+
+f
+
+```
+
+## Hip
+
+### New data
+
+```{r}
+m <- bmod_h
+
+# The palette with black:
+cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
+          "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+          
+nd <- expand.grid(cycle = 1:101,
+                  age = seq(10, 80, 10),
+                  speed = seq(0.8, 1.8, 0.2))
+
+p <- predict (m, 
+              newdata = nd, 
+              model = "mu", 
+              term = c("s(cycle)", "s(age)", "s(speed)"), 
+              match.names = FALSE, 
+              intercept = TRUE, 
+              FUN = c95)
+
+```
+
+### Curves at different age
+
+```{r}
+
+df.plot <- bind_cols(nd, p) %>%
+  mutate (age = factor (age))%>%
+  mutate (speed = factor (speed))
+
+
+f <- ggplot(data = df.plot) +
+  geom_line (aes (x = cycle, y = Mean, colour = age)) +
+  geom_ribbon(aes(x = cycle, ymin = `2.5%`, ymax = `97.5%`, fill = age), alpha = 0.2) +
+  scale_color_manual(values = cbp2) +
+  scale_fill_manual(values = cbp2) +
+  facet_wrap(~speed, ncol = 3, scales = "fixed") + 
+  ylab ("Hip power (Nm/kg)") +
+  xlab ("%Stride") +
+  labs (color = "Age(years)") +
+  guides (fill = FALSE) + 
+  theme_half_open()
+
+f
+
+
+```
+
+```{r}
+
+df.plot <- bind_cols(nd, p) %>%
+  filter (cycle < 45) %>%
+  mutate (age = factor (age))%>%
+  mutate (speed = factor (speed)) %>%
+  group_by(age, speed) %>%
+  mutate (h1 = max (Mean)) %>%
+  ungroup () %>%
+  filter (Mean == h1)
+
+
+f <- ggplot(data = df.plot) +
+  geom_point (aes (x = age, y = Mean, color = age), size = 2) + 
+  geom_errorbar(aes(x = age, ymin = `2.5%`, ymax = `97.5%`, color = age), size = 1) + 
+  scale_color_manual(values = cbp2) +
+  facet_wrap(~speed, ncol = 3, scales = "fixed") + 
+  ylab ("H1 (Nm/kg)") +
+  xlab ("Age") +
+  labs (color = "Age(years)") +
+  theme_half_open()
+
+
+f
+
+```
+
+```{r}
+
+df.plot <- bind_cols(nd, p) %>%
+  filter (cycle > 50) %>%
+  mutate (age = factor (age))%>%
+  mutate (speed = factor (speed)) %>%
+  group_by(age, speed) %>%
+  mutate (h3 = max (Mean)) %>%
+  ungroup () %>%
+  filter (Mean == h3)
+
+
+f <- ggplot(data = df.plot) +
+  geom_point (aes (x = age, y = Mean, color = age), size = 2) + 
+  geom_errorbar(aes(x = age, ymin = `2.5%`, ymax = `97.5%`, color = age), size = 1) + 
+  scale_color_manual(values = cbp2) +
+  facet_wrap(~speed, ncol = 3, scales = "fixed") + 
+  ylab ("H3 (Nm/kg)") +
+  xlab ("Age") +
+  labs (color = "Age(years)") +
+  theme_half_open()
+
+
+f
+
+```
