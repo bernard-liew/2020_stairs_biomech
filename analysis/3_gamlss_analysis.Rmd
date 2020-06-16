@@ -111,6 +111,28 @@ saveRDS(df_hip, file.path(output_dir, "df_hip.RDS"))
 ```
 
 
+# Descriptives
+
+```{r}
+
+age_cut <- seq (15, 95, 10)
+age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
+
+age_labels[1] <- "18 - 25 (yo)"
+
+df.summary <- df %>%
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels)) %>%
+  group_by(subj) %>%
+  slice (1) %>%
+  ungroup()%>%
+  dplyr::select (-c(val, cycle, joint, subj))
+
+  
+summary (tableby(study ~., data = df.summary), text = TRUE)
+
+```
+
+
 # GAMLSS modelling
 
 ## ankle
