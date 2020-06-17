@@ -4,7 +4,6 @@ output: html_notebook
 editor_options: 
   chunk_output_type: console
 ---
- 
 # Import library
 
 ```{r}
@@ -85,6 +84,43 @@ df_restruct <- pmap (list (id = id.list, data = df.list), extract_from_mat)
 ```
 
 
+## Extract power data
+
+```{r}
+
+temp <- df_restruct %>%
+  map (~.$biomech) %>%
+  bind_rows() %>%
+  separate(task, into = c("task", "rep"), sep = "_")%>%
+  mutate_if (is.character, ~tolower(.)) %>%
+  mutate (task = str_trim (task),
+          var_axis = str_trim (var_axis),
+          val = ifelse (side == "lx" & var_axis == "ankleadd", val * -1, 
+                        ifelse (task %in% c("toewalking", "walking") & side == "lx" & var_axis == "anklerot", val * -1, val))) %>%
+  filter (var_axis %in% c("anklepwr", "kneepwr", "hippwr")) %>%
+  filter (task == "walking") %>%
+  mutate (joint = ifelse (var_axis == "anklepwr", "ankle",
+                          ifelse (var_axis == "kneepwr", "knee",
+                                  "hip"))) %>%
+  arrange (subj, speed) %>%
+  group_by(subj)  %>%
+  group_split () %>%
+  map (select_middle) %>%
+  bind_rows() %>%
+  ungroup () %>%
+  # Retains all speeds
+  group_by(subj, joint, cond, speed, cycle) %>%
+  summarize (age = age[1],
+             sex = sex[1],
+             ht = ht[1],
+             wt = wt[1],
+             val = mean (val)) %>%
+  ungroup () 
+
+
+```
+
+
 ## Export data
  
 ```{r}
@@ -92,7 +128,7 @@ df_restruct <- pmap (list (id = id.list, data = df.list), extract_from_mat)
 
 file_name <- "df_lencioni.RDS"
 
-saveRDS(df_restruct, file = file.path(output_dir, file_name))
+saveRDS(temp, file = file.path(output_dir, file_name))
 ```
 
 # Taylor data
@@ -140,7 +176,16 @@ df <- df.list %>%
           cadence = Cadence,
           strlen = `Stride Length`,
           speed = `Walking Speed`) %>%
-  dplyr::select (subj, age, sex,wt, ht, speed, cadence, strlen, var, cycle, val)
+  mutate (joint = ifelse (grepl ("Knee", var), "knee",
+                          ifelse (grepl ("Hip", var), "hip", "ankle")),
+          cond = "self") %>%
+  group_by(subj, joint, cond, speed, cycle) %>%
+  summarize (age = age[1],
+           sex = sex[1],
+           ht = ht[1],
+           wt = wt[1],
+           val = mean (val)) %>%
+  ungroup ()
 
 ```
 
@@ -163,7 +208,7 @@ saveRDS(df, file = file.path(output_dir, file_name))
 
 raw_dir <- "../../mocap_database/data_fukuchi/fun"
 
-list_of_files <- list.files(raw_dir, pattern = glob2rx("*T05*.txt"))
+list_of_files <- list.files(raw_dir, pattern = glob2rx("*walkT*.txt")) #"*T05*.txt"
 list_of_files <- list_of_files[!grepl ("bad", list_of_files)]
 
 registerDoParallel(cores = 6)
@@ -185,7 +230,7 @@ demo <- read_delim("data/fukuchi_demo.txt", "\t",
   rename (subj = subject,
           ht = height,
           wt = mass) %>%
-  filter (speedgrp == "t05") %>%
+  #filter (speedgrp == "t05") %>%
   dplyr::select (subj, age, sex, cond, ht, wt, speed)
 
 bad_subj <- c(18, 21, 25, 29, 32, 33, 34, 35, 38)
@@ -245,7 +290,15 @@ df4 <- df3.list %>%
   mutate (subj = str_extract(subj, "[[:digit:]]+") %>% as.numeric) %>%
   inner_join(demo, by = c("subj", "cond")) %>%
   filter (subj != bad_subj) %>%
-  dplyr::select (-c(cond, var))
+  # Retains all speeds
+  group_by(subj, joint, cond, speed, cycle) %>%
+  summarize (age = age[1],
+             sex = sex[1],
+             ht = ht[1],
+             wt = wt[1],
+             val = mean (pwr)) %>%
+  ungroup () 
+  
 
 
 ```
@@ -381,7 +434,16 @@ df4 <- df3.list %>%
   bind_rows () %>%
   inner_join(vel, by = c("subj", "cond")) %>%
   inner_join(demo, by = c("subj")) %>%
-  dplyr::select (-c(cond, var))
+  mutate (cond = "self") %>%
+  # Retains all speeds
+  group_by(subj, joint, cond, speed, cycle) %>%
+  summarize (age = age[1],
+             sex = sex[1],
+             ht = ht[1],
+             wt = wt[1],
+             val = mean (pwr)) %>%
+  ungroup()
+  #dplyr::select (-c(cond, var))
 
 
 ```
@@ -511,12 +573,18 @@ df3.list  <- foreach(f = 1:length(df2.list), .packages="tidyverse")%dopar% {
 
 }
 
-
+# condition cond == "c4" is self-paced
 df4 <- df3.list %>%
   bind_rows () %>%
   inner_join(demo_df, by = c("subj", "cond", "trial")) %>%
-  filter (cond == "c4")%>%
-  dplyr::select (-c(cond, var))
+  # Retains all speeds
+  group_by(subj, joint, cond, speed, cycle) %>%
+  summarize (age = age[1],
+             sex = sex[1],
+             ht = ht[1],
+             wt = wt[1],
+             val = mean (pwr)) %>%
+  ungroup()
 
 
 ```

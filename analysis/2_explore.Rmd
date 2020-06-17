@@ -73,29 +73,9 @@ names (df.list) <- str_remove (list_of_files, ".RDS")
 
 ```{r}
 
-temp <- df.list$df_lencioni %>%
-  map (~.$biomech) %>%
-  bind_rows() %>%
-  separate(task, into = c("task", "rep"), sep = "_")%>%
-  mutate_if (is.character, ~tolower(.)) %>%
-  mutate (task = str_trim (task),
-          var_axis = str_trim (var_axis),
-          val = ifelse (side == "lx" & var_axis == "ankleadd", val * -1, 
-                        ifelse (task %in% c("toewalking", "walking") & side == "lx" & var_axis == "anklerot", val * -1, val))) %>%
-  filter (var_axis %in% c("anklepwr", "kneepwr", "hippwr")) %>%
-  filter (task == "walking") %>%
-  mutate (study = "lencioni",
-          joint = ifelse (var_axis == "anklepwr", "ankle",
-                          ifelse (var_axis == "kneepwr", "knee",
-                                  "hip"))) %>%
-  arrange (subj, speed) %>%
-  group_by(subj)  %>%
-  group_split () %>%
-  map (select_middle) %>%
-  bind_rows() %>%
-  ungroup () %>%
-  dplyr::select (-c(task, strlen, strwid, cadence, var_axis))
+temp <- df.list$df_lencioni 
 
+temp$study <- "lencioni"
 
 ```
 
@@ -104,24 +84,38 @@ temp <- df.list$df_lencioni %>%
  
 ```{r}
 
-df_plot <- temp %>%
-  unite ("subj_rep_side", subj, rep, side, sep = "_")
+by_group <- temp %>%
+  pivot_wider(names_from = cycle, values_from = val) %>%
+  group_by(joint)
 
+by_key <- by_group %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+
+names(df_plot) <- by_key$joint
   
-f <- ggplot (data= df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
-  facet_wrap( ~ joint) + 
-  theme(legend.position = "none")
-
 data_name <- "lencioni" 
 
 fig_name <- "individual_plot.pdf"
 
 
 pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
-f
-dev.off()
 
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
+dev.off()
 
 ```
 
@@ -137,11 +131,8 @@ df.list$df_lencioni <- temp
 ```{r}
 
 temp <- df.list$df_taylor %>%
-  mutate (study = "taylor") %>%
-  dplyr::select (-c(cadence, strlen)) %>%
-  mutate (var = str_remove (var, "Pow")) %>%
-  mutate_if (is.character, ~tolower(.)) %>%
-  rename (joint = var)
+  mutate (study = "taylor") 
+
 
 ```
 
@@ -149,24 +140,41 @@ temp <- df.list$df_taylor %>%
 ## Individual plot
  
 ```{r}
-
-df_plot <- temp 
-
-  
-f <- ggplot (data= df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = as.factor (subj))) +
-  facet_wrap( ~ joint) + 
-  theme(legend.position = "none")
-
 data_name <- "taylor" 
 
 fig_name <- "individual_plot.pdf"
 
+by_group <- temp %>%
+  pivot_wider(names_from = cycle, values_from = val) %>%
+  group_by(joint)
 
-pdf (width = 10, height = 6, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
-f
+by_key <- by_group  %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+
+names(df_plot) <- by_key$joint
+  
+
+
+
+
+pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
+
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
 dev.off()
-
 
 
 ```
@@ -206,21 +214,35 @@ temp3$cycle <- parse_number(temp3$cycle)
  
 ```{r}
 
-df_plot <- temp3 
-
-  
-f <- ggplot (data= df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = subj)) +
-  facet_wrap( ~ joint) + 
-  theme(legend.position = "none")
-
-data_name <- "taylor" 
-
 fig_name <- "individual_clean_plot.pdf"
 
+by_group <- temp3 %>%
+  pivot_wider(names_from = cycle, values_from = val) %>%
+  group_by(joint)
+
+by_key <- by_group %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+
+names(df_plot) <- by_key$joint
+  
 
 pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
-f
+
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
 dev.off()
 
 
@@ -239,8 +261,6 @@ df.list$df_taylor <- temp3
 
 temp <- df.list$df_horst %>%
   mutate (study = "horst") %>%
-  rename (val = pwr,
-          rep = reps) %>%
   mutate (val = val/wt) 
 
 ```
@@ -250,23 +270,41 @@ temp <- df.list$df_horst %>%
  
 ```{r}
 
-df_plot <- temp %>%
-  unite ("subj_rep_side", subj, rep, side, sep = "_")
-
-  
-f <- ggplot (data= df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
-  facet_wrap( ~ joint) + 
-  theme(legend.position = "none")
-
 data_name <- "horst" 
-
 fig_name <- "individual_plot.pdf"
+
+by_group <- temp %>%
+  pivot_wider(names_from = cycle, values_from = val) %>%
+  group_by(joint)
+
+by_key <- by_group %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+
+names(df_plot) <- by_key$joint
+  
+
+
 
 
 pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
-f
+
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
 dev.off()
+
 
 
 ```
@@ -304,24 +342,41 @@ temp3$cycle <- parse_number(temp3$cycle)
 ## recheck individual plot
  
 ```{r}
-
-df_plot <- temp3 %>%
-  unite ("subj_rep_side", subj, rep, side, sep = "_")
-
-  
-f <- ggplot (data= df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
-  facet_wrap( ~ joint) + 
-  theme(legend.position = "none")
-
-data_name <- "horst" 
-
 fig_name <- "individual_clean_plot.pdf"
+
+by_group <- temp3 %>%
+  pivot_wider(names_from = cycle, values_from = val) %>%
+  group_by(joint)
+
+by_key <- by_group %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+
+names(df_plot) <- by_key$joint
+  
+
+
 
 
 pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
-f
+
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
 dev.off()
+
+
 
 
 ```
@@ -338,8 +393,6 @@ df.list$df_horst <- temp3
 
 temp <- df.list$df_schreiber %>%
   mutate (study = "schreiber") %>%
-  rename (val = pwr,
-          rep = reps) %>%
   mutate (val = val/wt) %>%
   mutate (sex = ifelse (sex == 0, "f", "m")) %>%
   na.omit() 
@@ -351,23 +404,40 @@ temp <- df.list$df_schreiber %>%
  
 ```{r}
 
-df_plot <- temp %>%
-  unite ("subj_rep_side", subj, rep, side, sep = "_")
-
-  
-f <- ggplot (data= df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
-  facet_wrap( ~ joint) + 
-  theme(legend.position = "none")
-
 data_name <- "schreiber" 
 
 fig_name <- "individual_plot.pdf"
 
 
+by_group <- temp %>%
+  pivot_wider(names_from = cycle, values_from = val) %>%
+  group_by(joint)
+
+by_key <- by_group %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+
+names(df_plot) <- by_key$joint
+  
+
 pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
-f
+
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
 dev.off()
+
 
 
 ```
@@ -401,12 +471,6 @@ temp3 <- temp2 %>%
                values_to = "val")
 temp3$cycle <- parse_number(temp3$cycle)
 
-temp3 <- temp3 %>%
-  group_by(subj, study, side, joint, age, ht, wt, sex, cycle) %>%
-  summarise(val = mean (val, na.rm = TRUE),
-            speed = mean (speed)) %>%
-  ungroup ()
-
 ```
 
 
@@ -414,23 +478,38 @@ temp3 <- temp3 %>%
  
 ```{r}
 
-df_plot <- temp3 %>%
-  unite ("subj_rep_side", subj, rep, side, sep = "_")
+by_group <- temp3 %>%
+  pivot_wider(names_from = cycle, values_from = val) %>%
+  group_by(joint)
 
+by_key <- by_group %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+
+names(df_plot) <- by_key$joint
   
-f <- ggplot (data= df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
-  facet_wrap( ~ joint) + 
-  theme(legend.position = "none")
-
-data_name <- "schreiber" 
 
 fig_name <- "individual_clean_plot.pdf"
 
 
 pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
-f
+
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
 dev.off()
+
 
 
 ```
@@ -446,8 +525,6 @@ df.list$df_schreiber <- temp3
 ```{r}
 
 temp <- df.list$df_fukuchi %>%
-  rename (val = pwr,
-          rep = reps) %>%
   mutate (study = "fukuchi")%>%
   mutate (val = val/wt)
 
@@ -459,23 +536,40 @@ temp <- df.list$df_fukuchi %>%
  
 ```{r}
 
-df_plot <- temp %>%
-  unite ("subj_rep_side", subj, rep, side, sep = "_")
-
-  
-f <- ggplot (data= df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
-  facet_wrap( ~ joint) + 
-  theme(legend.position = "none")
-
 data_name <- "fukuchi" 
 
 fig_name <- "individual_plot.pdf"
 
 
-pdf (width = 10, height = 6, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
-f
+by_group <- temp %>%
+  pivot_wider(names_from = cycle, values_from = val) %>%
+  group_by(joint)
+
+by_key <- by_group %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+
+names(df_plot) <- by_key$joint
+  
+
+pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
+
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
 dev.off()
+
 
 
 
@@ -515,23 +609,39 @@ temp3$cycle <- parse_number(temp3$cycle)
  
 ```{r}
 
-df_plot <- temp3 %>%
-  unite ("subj_rep_side", subj, rep, side, sep = "_")
-
-  
-f <- ggplot (data= df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = subj_rep_side)) +
-  facet_wrap( ~ joint) + 
-  theme(legend.position = "none")
-
-data_name <- "fukuchi" 
-
 fig_name <- "individual_clean_plot.pdf"
 
 
+by_group <- temp3 %>%
+  pivot_wider(names_from = cycle, values_from = val) %>%
+  group_by(joint)
+
+by_key <- by_group %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+
+names(df_plot) <- by_key$joint
+  
+
 pdf (width = 10, height = 8, file = file.path(output_dir, paste0 (data_name, "_", fig_name)))
-f
+
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
 dev.off()
+
+
 
 
 ```
@@ -544,38 +654,13 @@ df.list$df_fukuchi<- temp3
 
 
 # Combine five data
-
-## Average over subj
-
-```{r}
-df.list2 <- list()
-for (n in seq_along(df.list)) {
-  
-  df.list2[[n]] <- df.list[[n]] %>%
-    group_by(study, 
-             subj, 
-             age, 
-             sex, 
-             wt, 
-             ht, 
-             speed, 
-             joint, 
-             cycle) %>%
-    summarise(val = mean (val, na.rm = TRUE)) %>%
-    ungroup ()
-  
-  
-}
-
-```
-
 ## Change subj names
 
 ```{r}
 
-for (n in seq_along(df.list2)) {
+for (n in seq_along(df.list)) {
   
-  df.list2[[n]] <- df.list2[[n]] %>%
+  df.list[[n]] <- df.list [[n]] %>%
     mutate (subj = paste0(study, "_", subj))
   
 }
@@ -585,11 +670,10 @@ for (n in seq_along(df.list2)) {
 ## Bind df.list
 
 ```{r}
-df <- df.list2 %>%
+df <- df.list %>%
   bind_rows() %>%
   mutate (sex = str_trim(sex)) %>%
-  mutate (ht = ifelse (ht > 3, ht / 100, ht))%>%
-  filter (study != "lencioni")
+  mutate (ht = ifelse (ht > 3, ht / 100, ht)) 
 ```
 
 ## Plot of power over cycle, age, speed
@@ -599,7 +683,7 @@ df <- df.list2 %>%
 age_cut <- seq (5, 95, 10)
 age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
 
-speed_cut <- seq (0.5, 2.0, 0.5)
+speed_cut <- seq (0, 2.5, 0.5)
 speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
 
 df_plot <- df %>%
@@ -811,8 +895,9 @@ df %>%
 ```{r}
 
 output_dir <- "output"
-file_name <- "df_clean.RDS"
+file_name <- "df_clean_allspeed.RDS"
 
 saveRDS(df, file = file.path(output_dir, file_name))
 
 ```
+

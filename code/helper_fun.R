@@ -173,18 +173,18 @@ select_middle <- function(x) {
     
     slct_speed <- unique (x$speed) 
     speed_med <- slct_speed[((n_distinct(slct_speed)) / 2) - 1]
-    x2 <- x %>% filter (speed == speed_med)
+    x2 <- x %>% mutate (cond = ifelse (speed == speed_med, "self", "nonself"))
     
   } else if (n_distinct(x$speed) %% 2 == 0 & n_distinct(x$speed) == 2) {
     
     slct_speed <- unique (x$speed) 
     speed_med <- slct_speed[n_distinct(slct_speed) - 1]
-    x2 <- x %>% filter (speed == speed_med)
+    x2 <- x %>% mutate (cond = ifelse (speed == speed_med, "self", "nonself"))
     
   } else {
     
     speed_med <- median (unique (x$speed))
-    x2 <- x %>% filter (speed == speed_med)
+    x2 <- x %>% mutate (cond = ifelse (speed == speed_med, "self", "nonself"))
     
   }
   
