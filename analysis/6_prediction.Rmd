@@ -50,9 +50,30 @@ library (cowplot)
 
 output_dir <- "output"
 
-bmod_a <- readRDS(file.path(output_dir, "bamlss_finalmod_ankle.RDS"))
+bmod_a <- readRDS(file.path(output_dir, "bamlss_finalmod2_ankle.RDS"))
 bmod_k <- readRDS(file.path(output_dir, "bamlss_finalmod2_knee.RDS"))
 bmod_h <- readRDS(file.path(output_dir, "bamlss_finalmod2_hip.RDS"))
+
+```
+
+# Diagnostic plots
+
+## MCMC samples
+
+```{r}
+
+m <- list (bmod_a, bmod_k, bmod_h)
+plotname <- c("dxmod_ankle.pdf", "dxmod_knee.pdf", "dxmod_hip.pdf")
+
+for (n in seq_along (m)) {
+  
+  pdf (file = file.path(output_dir, paste0 (plotname[n])))
+  plot(m[[n]], which = "samples", ask=FALSE)
+  dev.off()
+    
+  
+}
+
 
 ```
 
@@ -76,10 +97,10 @@ nd <- expand.grid(cycle = 1:101,
 
 p <- predict (m, 
               newdata = nd, 
-              model = "mu", 
               term = c("s(cycle)", "s(age)", "s(speed)"), 
               match.names = FALSE, 
               intercept = TRUE, 
+              type = "parameter",
               FUN = c95)
 
 ```
