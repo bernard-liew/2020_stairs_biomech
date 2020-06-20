@@ -149,7 +149,7 @@ form = "val ~ ba(~
              sex +
              s(ht))"
 
-form_scale = "~ ba (~ s(cycle, k = 40) + study)"
+form_scale = "~ ba (~ s(cycle, by = study))"
 ```
 
 
@@ -240,7 +240,8 @@ f <- list (val ~ ti(cycle, speed) +
              s(subj, bs = 're') +
              sex +
              s(ht),
-           sigma ~ s(cycle, k = 40) + study)
+           sigma ~ s(cycle, by = study))
+
 
 ```
 
@@ -255,7 +256,7 @@ bamlss_model_ankle <-  bamlss (f,
                               burnin = 1000, 
                               thin = 1,
                               binning = TRUE)
-saveRDS(bamlss_model_ankle, "output/bamlss_finalmod_ankle.RDS")
+saveRDS(bamlss_model_ankle, "output/bamlss_finalmod2_ankle.RDS")
 
 rm(bamlss_model_ankle)
 
@@ -266,7 +267,7 @@ bamlss_model_knee <-  bamlss (f,
                               burnin = 1000, 
                               thin = 1,
                               binning = TRUE)
-saveRDS(bamlss_model_knee, "output/bamlss_finalmod_knee.RDS")
+saveRDS(bamlss_model_knee, "output/bamlss_finalmod2_knee.RDS")
 
 rm(bamlss_model_knee)
 
@@ -277,7 +278,7 @@ bamlss_model_hip <-  bamlss (f,
                               burnin = 1000, 
                               thin = 1,
                               binning = TRUE)
-saveRDS(bamlss_model_hip, "output/bamlss_finalmod_hip.RDS")
+saveRDS(bamlss_model_hip, "output/bamlss_finalmod2_hip.RDS")
 
 
 ```
