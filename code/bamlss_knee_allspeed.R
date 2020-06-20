@@ -22,6 +22,7 @@ library (distreg.vis)
 output_dir <- "output"
 
 frac <- 0.3
+k <- 15
 
 df <- readRDS(file.path(output_dir, "df_clean_allspeed.RDS")) %>%
   filter (joint == "knee") %>% 
@@ -40,7 +41,7 @@ f <- list (val ~ ti(cycle, speed) +
              ti(ht, cycle) + 
              s(age) + 
              s(speed) + 
-             s(cycle, k = 40) + 
+             s(cycle, k = k) + 
              s(cycle, by = study, bs = 're') +
              s(subj, bs = 're') +
              sex +
