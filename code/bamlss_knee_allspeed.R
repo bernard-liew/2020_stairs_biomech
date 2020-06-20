@@ -21,12 +21,18 @@ library (distreg.vis)
 
 output_dir <- "output"
 
+frac <- 0.3
+
 df <- readRDS(file.path(output_dir, "df_clean_allspeed.RDS")) %>%
   filter (joint == "knee") %>% 
+  filter(study != "lencioni") %>% # data reported dissimilar to others
+  group_by(subj, speed, age, sex, ht, wt, study)%>% 
+  sample_frac(frac) %>%
+  ungroup () %>%
   mutate(sex = as.factor(sex),
          subj = as.factor(subj),
-         study = as.factor(study))
-
+         study = as.factor(study)) %>%
+  as.data.frame()
 
 f <- list (val ~ ti(cycle, speed) +
              ti(cycle, age) + 
