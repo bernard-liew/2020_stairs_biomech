@@ -1,21 +1,14 @@
 # Load packages ---------------------------------------------------------------------
 
 # Helper
-library (tidyverse)
+library (dplyr)
+library (tidyr)
 
 # modelling
 library (gamlss)
 library (gamlss.add)
 library(gamlss.dist)
 library (bamlss)
-
-# parallel
-library(doParallel)
-library(foreach)
-library (furrr)
-
-# Plotting
-library (distreg.vis)
 
 # Import data ------------------------------------------------------------------------
 
@@ -28,7 +21,7 @@ df <- readRDS(file.path(output_dir, "df_clean_allspeed.RDS")) %>%
   filter (joint == "hip") %>% 
   filter(study != "lencioni") %>% # data reported dissimilar to others
   group_by(subj, speed, age, sex, ht, wt, study)%>% 
-  sample_frac(frac) %>%
+  # sample_frac(frac) %>%
   ungroup () %>%
   mutate(sex = as.factor(sex),
          subj = as.factor(subj),
@@ -57,6 +50,8 @@ mod <-  bamlss (f,
                 burnin = 1000, 
                 thin = 1,
                 maxit = 800,
-                binning = TRUE)
+                binning = TRUE,
+                light = TRUE,
+                cores = 10)
 
 saveRDS(mod, "output/bamlss_allspeed_hip.RDS")
