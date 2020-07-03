@@ -816,10 +816,10 @@ dev.off()
 
 ```{r}
 df %>%
-  group_by(joint, cycle) %>%
-  summarise(val = skewness (val)) %>%
+  group_by(subj, joint, cycle) %>%
+  summarise(val = e1071::skewness (val)) %>%
   ggplot () +
-  geom_line (aes (x = cycle, y = val )) +
+  geom_line (aes (x = cycle, y = val)) +
   facet_wrap(~ joint, ncol = 3) +
   geom_hline (yintercept = 0)
 ```
@@ -829,7 +829,7 @@ df %>%
 ```{r}
 df %>%
   group_by(joint, age) %>%
-  summarise(val = skewness (val)) %>%
+  summarise(val = e1071::skewness (val)) %>%
   ggplot () +
   geom_line (aes (x = age, y = val )) +
   facet_wrap(~ joint, ncol = 3) +
@@ -842,9 +842,22 @@ df %>%
 ```{r}
 df %>%
   group_by(joint, speed) %>%
-  summarise(val = skewness (val)) %>%
+  summarise(val = e1071::skewness (val)) %>%
   ggplot () +
   geom_line (aes (x = speed, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 0)
+
+```
+
+### By height
+
+```{r}
+df %>%
+  group_by(joint, ht) %>%
+  summarise(val = e1071::skewness (val)) %>%
+  ggplot () +
+  geom_line (aes (x = ht, y = val )) +
   facet_wrap(~ joint, ncol = 3) +
   geom_hline (yintercept = 0)
 
@@ -857,7 +870,7 @@ df %>%
 ```{r}
 df %>%
   group_by(joint, cycle) %>%
-  summarise(val = kurtosis (val)) %>%
+  summarise(val = e1071::kurtosis (val)) %>%
   ggplot () +
   geom_line (aes (x = cycle, y = val )) +
   facet_wrap(~ joint, ncol = 3) +
@@ -869,7 +882,7 @@ df %>%
 ```{r}
 df %>%
   group_by(joint, age) %>%
-  summarise(val = kurtosis (val)) %>%
+  summarise(val = e1071::kurtosis(val)) %>%
   ggplot () +
   geom_line (aes (x = age, y = val )) +
   facet_wrap(~ joint, ncol = 3) +
@@ -882,7 +895,7 @@ df %>%
 ```{r}
 df %>%
   group_by(joint, speed) %>%
-  summarise(val = kurtosis (val)) %>%
+  summarise(val = e1071::kurtosis(val)) %>%
   ggplot () +
   geom_line (aes (x = speed, y = val )) +
   facet_wrap(~ joint, ncol = 3) +
