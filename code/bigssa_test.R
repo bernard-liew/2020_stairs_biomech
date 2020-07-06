@@ -1,135 +1,169 @@
 library (bigsplines)
-library (plot3D)
-library (plot3Drgl)
+library (plotly)
+library (tidyverse)
+library (foreach)
+library (doParallel)
 
-df_ankle$sex = factor (df_ankle$sex)
+# Import data --------------------------------------------------------------------------------
+dat <- readRDS("output/df_clean_allspeed.RDS")  %>% 
+  filter(study != "lencioni")  # data reported dissimilar to others
 
-rknots <- binsamp(as.matrix (df_ankle[,names (df_ankle) %in% c("speed", "age", "cycle")]), nmbin = c(10, 10, 20))
+## Split into 3 dataframes -------------------------------------------------------------------
+
+ank <- dat  %>%
+  filter (joint == "ankle") %>% 
+  mutate(sex = as.factor(sex),
+         subj = as.factor(subj),
+         study = as.factor(study)) %>%
+  as.data.frame()
+
+knee <- dat  %>%
+  filter (joint == "knee") %>% 
+  mutate(sex = as.factor(sex),
+         subj = as.factor(subj),
+         study = as.factor(study)) %>%
+  as.data.frame()
+
+hip <- dat  %>%
+  filter (joint == "hip") %>% 
+  mutate(sex = as.factor(sex),
+         subj = as.factor(subj),
+         study = as.factor(study)) %>%
+  as.data.frame()
+
+# Modelling  ---------------------------------------------------------------------------------
 
 num_prm <- 0.01
 ord_prm <- 1
+knots_num <- 100
 
-m <- bigssa (val ~ sex+ cycle*speed*age,
-             type=list(sex = "nom", cycle = "per", age = "cub", speed ="cub"),
-             rparm=list(cycle = num_prm, speed = num_prm, age = num_prm, sex = ord_prm),
-             nknots=100,
-             data = df_ankle_downsamp,
-             skip.iter=T)
+dat.list <- list (ank, knee, hip)
 
-s <- summary (m, fitresid = TRUE)
+registerDoParallel(detectCores()-2)
 
-plot (s$fitted.values, s$residuals)
+mod.list <- foreach (n = 1:3, .packages = "bigsplines") %dopar% {
+  
+  bigssa(val ~ sex + cycle*speed*age,
+         random = ~ (study|subj) , # subject nested in study
+         type = list(sex = "nom", cycle = "per", age = "cub", speed ="cub"),
+         rparm = list(cycle = num_prm, speed = num_prm, age = num_prm, sex = ord_prm),
+         nknots = knots_num,
+         data = dat.list[[n]],
+         skip.iter = FALSE)
+}
+
+stopImplicitCluster()
+
+saveRDS (mod.list, "output/bigssa_model.RDS")
+
+# Plot residuals  ---------------------------------------------------------------------------------
+
+mod.list <- readRDS("output/bigssa_model.RDS")
 
 
+pdf ("output/big_ssa_diagnostics.pdf")
+par(mfrow = c(2,2))
+for (n in 1:3){
+  
+  s <- summary (mod.list[[n]], fitresid = TRUE)
+  plot (s$fitted.values, s$residuals)
+}
+dev.off()
 
-m1 <- bigssp (val ~ sex+ cycle*speed*age,
-             type=list(sex = "nom", cycle = "per", age = "cub", speed ="prm"),
-             rparm=list(cycle = num_prm, speed = num_prm, age = num_prm, sex = ord_prm),
-             nknots = 100,
-             data = df_ankle_downsamp,
-             skip.iter=T)
+# Prediction ---------------------------------------------------------------------------------------
+nd <- expand.grid(cycle = c(1:101),
+                  age = seq (20, 80, 10),
+                  speed = c(0.5, 1, 1.5))
 
-s1 <- summary (m1, fitresid = TRUE)
-plot (s1$fitted.values, s1$residuals)
+registerDoParallel(detectCores()-2)
+p <- foreach (n = 1:3, .packages = c("bigsplines", "tidyverse")) %dopar% {
+  
+  pred <- predict(mod.list [[n]],
+          newdata = nd,
+          se.fit=TRUE,
+          include= c("age", "cycle", "speed"),
+          includeint=T)
+  
+  pred_df <- bind_rows(pred) %>%
+    bind_cols(nd) %>%
+    mutate (lwr = fit - 2*se.fit,
+            upr = fit + 2*se.fit)
+  
+  return (pred_df)
+  
+}
+stopImplicitCluster()
+  
 
-m2 <- bigssp (log (val) ~ sex+ cycle*speed*age,
-              type=list(sex = "nom", cycle = "per", age = "cub", speed ="prm"),
-              rparm=list(cycle = num_prm, speed = num_prm, age = num_prm, sex = ord_prm),
-              nknots = 100,
-              data = df_ankle,
-              skip.iter=T)
+names (p ) <- c("ankle", "knee", "hip")
 
-summ <- summary (m1, fitresid = TRUE)
+p <- bind_rows(p, .id = "joint") %>%
+  mutate (age = factor (age),
+          speed = factor (speed))
+
+# Results  ---------------------------------------------------------------------------------------
+
+f <- p %>%
+  ggplot () +
+  geom_line(aes (x = cycle, y = fit, colour = age)) +
+  geom_ribbon(aes (x = cycle, ymin = lwr, ymax = upr, fill = age), alpha = 0.4) + 
+  facet_wrap(joint ~ speed)
+
 windows()
-plot (summ$fitted.values, summ$residuals)
+f
+
+a2 <- p %>%
+  filter (joint == "ankle") %>%
+  group_by(age, speed) %>%
+  summarize (fit = max (fit),
+             lwr = max (lwr),
+             upr = max (upr)) %>%
+  ggplot() + 
+  geom_point(aes (x = age, y = fit)) +
+  geom_errorbar(aes (x = age, ymin = lwr, ymax = upr)) +
+  facet_wrap(~ speed)
+
+a2
 
 
+h3 <- p %>%
+  filter (joint == "hip") %>%
+  filter (cycle > 50) %>%
+  group_by(age, speed) %>%
+  summarize (fit = max (fit),
+             lwr = max (lwr),
+             upr = max (upr)) %>%
+  ggplot() + 
+  geom_point(aes (x = age, y = fit)) +
+  geom_errorbar(aes (x = age, ymin = lwr, ymax = upr)) +
+  facet_wrap(~ speed)
 
-newdata <- expand.grid(cycle = c(1:101),
-                       age = seq (5, 85, 1),
-                       speed = 0.7)
-yhat = predict(m,
-               newdata = newdata,
-               se.fit=TRUE,
-               include= c("age", "cycle", "speed"),
-               includeint=T)
+h3
 
-yhat_df <- bind_rows(yhat) %>%
-  bind_cols(newdata) %>%
-  mutate (lwr = fit - 2*se.fit,
-          upr = fit + 2*se.fit)
+h1 <- p %>%
+  filter (joint == "hip") %>%
+  filter (cycle < 50) %>%
+  group_by(age, speed) %>%
+  summarize (fit = max (fit),
+             lwr = max (lwr),
+             upr = max (upr)) %>%
+  ggplot() + 
+  geom_point(aes (x = age, y = fit)) +
+  geom_errorbar(aes (x = age, ymin = lwr, ymax = upr)) +
+  facet_wrap(~ speed)
 
-z <- matrix (yhat_df[, "fit"] %>% pull(), nrow = length (c(1:101)), ncol = length (seq (5, 85, 1)))
-z_lwr <- matrix (yhat_df[, "lwr"] %>% pull(), nrow = length (c(1:101)), ncol = length (seq (5, 85, 1)))
-z_upr <- matrix (yhat_df[, "upr"] %>% pull(), nrow = length (c(1:101)), ncol = length (seq (5, 85, 1)))
+h1
 
-par (mfrow = c(1,1))
+k2 <-p %>%
+  filter (joint == "knee") %>%
+  filter (cycle > 10 & cycle < 45) %>%
+  group_by(age, speed) %>%
+  summarize (fit = max (fit),
+             lwr = max (lwr),
+             upr = max (upr)) %>%
+  ggplot() + 
+  geom_point(aes (x = age, y = fit)) +
+  geom_errorbar(aes (x = age, ymin = lwr, ymax = upr)) +
+  facet_wrap(~ speed)
 
-clim <- c (min (range (z_lwr)), max (range (z_upr)))
-
-xl <-  "cycle (0-100%)"
-yl <- "age (years)"
-zl <-  "power (W/kg)"
-cl <- "power (W/kg)"
-
-
-persp3D(x = c(1:101),
-       y = seq (5, 85, 1),
-       z = z,
-       add = TRUE,
-       clim = clim,
-       theta = 30, colkey = FALSE, plot = FALSE)
-
-persp3D(x = c(1:101),
-        y = seq (5, 85, 1),
-        z = z_lwr,
-        facets = NA,
-        col = jet.col(alpha =0.4),
-        add = TRUE,
-        clim = clim,
-        theta = 30, colkey = FALSE, plot = FALSE)
-
-persp3D(x = c(1:101),
-        y = seq (5, 85, 1),
-        z = z_upr,
-        col = jet.col(alpha =0.4),
-        facets = NA,
-        add = TRUE,
-        clim = clim,
-        xlab = xl,
-        ylab = yl,
-        zlab = zl,
-        clab = cl,
-        theta = 30)
-
-
-plotrgl()
-
-fig <- plot_ly(showscale = FALSE)
-fig <- fig %>% add_surface(z = ~z)
-fig <- fig %>% add_surface(z = ~z_lwr, opacity = 0.98)
-fig <- fig %>% add_surface(z = ~z_upr, opacity = 0.98)
-fig
-
-writeWebGL(filename = file.path("output", "ankle_pwr.html"))
-
-f <- list (val ~ sex + s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr") + 
-             ti(cycle, age, k = 15, bs = "cr") + ti(cycle, speed, k = 15, bs = "cr") + ti(age, speed, k = 10, bs = "cr"),
-           sigma ~ sex + s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr") + 
-             ti(cycle, age, k = 15, bs = "cr") + ti(cycle, speed, k = 15, bs = "cr") + ti(age, speed, k = 10, bs = "cr"))
-
-f2 <- list (val ~ sex + s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr") + 
-             ti(cycle, age, k = 15, bs = "cr") + ti(cycle, speed, k = 15, bs = "cr") + ti(age, speed, k = 10, bs = "cr"),
-           sigma ~ s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr"),
-           nu ~ s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr"),
-           tau ~ s(cycle, k = 15, bs = "cc") + s(age, k = 10, bs = "cr") + + s(speed, k = 10, bs = "cr"))
-
-b <- bamlss (f,
-             data = df_ankle_downsamp,
-             family = SHASH,
-             binning = TRUE)
-
-b1 <- bamlss (f2,
-             data = df_ankle_downsamp,
-             family = SHASH,
-             binning = TRUE)
+k2
