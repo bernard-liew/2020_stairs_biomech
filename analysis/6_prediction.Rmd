@@ -14,9 +14,6 @@ rm (list = ls())
 # Helper
 library (tidyverse)
 
-# Import
-library (rio)
-
 # Exploration 
 library (DataExplorer)
 library (janitor)
@@ -50,9 +47,9 @@ library (cowplot)
 
 output_dir <- "output"
 
-bmod_a <- readRDS(file.path(output_dir, "bamlss_finalmod2_ankle.RDS"))
-bmod_k <- readRDS(file.path(output_dir, "bamlss_finalmod2_knee.RDS"))
-bmod_h <- readRDS(file.path(output_dir, "bamlss_finalmod2_hip.RDS"))
+mod_a <- readRDS(file.path(output_dir, "gamlss_allspeed_ankle.RDS"))
+mod_k <- readRDS(file.path(output_dir, "gamlss_allspeed_knee.RDS"))
+mod_h <- readRDS(file.path(output_dir, "gamlss_allspeed_hip.RDS"))
 
 ```
 
@@ -85,23 +82,34 @@ for (n in seq_along (m)) {
 ### New data
 
 ```{r}
-m <- bmod_a
+m <- mod_a
 
-# The palette with black:
-cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
-          "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-          
+# Original data used to fit the model
+frac <- 0.3
+dat <- readRDS("output/df_clean_allspeed.RDS")  %>%
+  filter (joint == "ankle") %>% 
+  filter(study != "lencioni") %>% # data reported dissimilar to others
+  group_by(subj, speed, age, sex, ht, wt, study)%>%
+  sample_frac(frac) %>%
+  ungroup () %>%
+  mutate(sex = as.factor(sex),
+         subj = as.factor(subj),
+         study = as.factor(study)) %>%
+  as.data.frame()
+
+ # New data         
 nd <- expand.grid(cycle = 1:101,
-                  age = seq(10, 80, 10),
-                  speed = seq(0.8, 1.8, 0.2))
+                  age = seq(20, 80, 10),
+                  speed = c(0.5, 1, 1.5),
+                  sex = factor ("m", levels = levels(dat$sex)),
+                  ht = 1.7,
+                  study = factor ("fukuchi", levels = levels(dat$study)),
+                  subj = factor ("fukuchi_1", levels = levels(dat$subj)))
 
 p <- predict (m, 
               newdata = nd, 
-              term = c("s(cycle)", "s(age)", "s(speed)"), 
-              match.names = FALSE, 
-              intercept = TRUE, 
-              type = "parameter",
-              FUN = c95)
+              data = dat,
+              type = "response")
 
 ```
 
