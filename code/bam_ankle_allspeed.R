@@ -5,8 +5,10 @@ library (dplyr)
 
 # modelling
 library (mgcv)
-library (mgcViz)
 
+# plots
+library (mgcViz)
+library(itsadug)
 
 # Import data ------------------------------------------------------------------------
 
@@ -23,10 +25,17 @@ dat <- readRDS("output/df_clean_allspeed.RDS")  %>%
          study = as.factor(study)) %>%
   as.data.frame()
 
+bs <-  "cr"
 
-
-form <-  val ~ te(cycle, speed, age, k = c(40, 5, 5), bs = c("cr",  "cr",  "cr")) +
-  ti(ht, bs = "cr") +
+form <-  val ~  ti (cycle, k = 30, bs = bs) +
+  ti (age, k = 5, bs = bs) +
+  ti (speed, k = 5, bs = bs) +
+  ti (cycle, age, k = c(30, 5), bs = bs) +
+  ti (cycle, speed, k = c(30, 5), bs = bs) +
+  ti (age, speed, k = c(5, 5), bs = bs) +
+  #ti (cycle, speed, age, d = c(2, 1), k = c(30, 5), bs = b) + # adds to the computation time
+  ti (cycle, ht, k = c(30, 5), bs = bs) +
+  ti(ht, k = 5, bs = bs) +
   s(subj, bs = 're') +
   sex
 
@@ -38,7 +47,19 @@ mod <- bam (form,
             discrete = TRUE,
             family = scat())
 
+# Diagnostics ----------------------------------------------------------------------
+
 b <- getViz(mod)
 check (b)
+
+fit <- fitted(mod)
+res <- resid (mod)
+
+plot (fit, res)
+
+# Plot inference -------------------------------------------------------------------
+
+plot_smooth(mod, view = "cycle", cond = list (age = c(30), speed = 1), n.grid = 101, rm.ranef = TRUE)
+
 
 saveRDS(mod, "output/bam_allspeed_ankle.RDS")
