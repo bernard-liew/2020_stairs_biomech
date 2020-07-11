@@ -25,21 +25,33 @@ dat <- readRDS("output/df_clean_allspeed.RDS") %>%
          study = as.factor(study)) %>%
   as.data.frame()
 
+bs <-  "cr"
 
-form <-  val ~ ba(~
-                    te(cycle, speed, ht, age, d = c(3, 1), k = c(40, 5), bs = c("cr",  "cr")) +
-                    #ti(ht, bs = "cr") +
-                    s(subj, bs = 're') +
-                    sex) 
+form <-  val ~ ba (~ ti (cycle, k = 30, bs = bs) +
+                     ti (age, k = 5, bs = bs) +
+                     ti (speed, k = 5, bs = bs) +
+                     ti (cycle, age, k = c(30, 5), bs = bs) +
+                     ti (cycle, speed, k = c(30, 5), bs = bs) +
+                     ti (age, speed, k = c(5, 5), bs = bs) +
+                     #ti (cycle, speed, age, d = c(2, 1), k = c(30, 5), bs = b) + # adds to the computation time
+                     ti (cycle, ht, k = c(30, 5), bs = bs) +
+                     ti(ht, k = 5, bs = bs) +
+                     s(subj, bs = 're') +
+                     sex)
 
 # Modelling ------------------------------------------------------------------------
 mod <- gamlss(form,
-              sigma.fo = ~ ba (~ ti(cycle, bs = "cr", k = 40, by = study)),
+              sigma.fo = ~ ba (~ ti(cycle, bs = bs, k = 30, by = study)),
               family = "TF",
               discrete = TRUE,
               data = dat,
-              n.cyc = 50,
+              n.cyc = 60,
               trace = TRUE)
 
+# Plot inference -------------------------------------------------------------------
+
+smo <- getSmo(mod)
+
+plot_smooth(smo, view = "cycle", cond = list (age = c(30), speed = 1), n.grid = 101, rm.ranef = TRUE)
 
 saveRDS(mod, "output/gamlss_allspeed_knee.RDS")
