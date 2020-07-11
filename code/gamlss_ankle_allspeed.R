@@ -41,11 +41,13 @@ form <-  val ~ ba (~ ti (cycle, k = 30, bs = bs) +
 
 # Modelling ------------------------------------------------------------------------
 mod <- gamlss(form,
-              sigma.fo = ~ ba (~ ti(cycle, bs = bs, k = 30, by = study)),
+              sigma.fo = ~ ba (~ ti(cycle, bs = bs, k = 30, by = study) +
+                                 ti(speed, bs = bs, k = 5) +
+                                 ti (cycle, speed, k = c(30, 5), bs = bs)),
               family = "TF",
               discrete = TRUE,
               data = dat,
-              n.cyc = 60,
+              n.cyc = 200,
               trace = TRUE)
 
 # Plot inference -------------------------------------------------------------------
@@ -54,4 +56,4 @@ smo <- getSmo(mod)
 
 plot_smooth(smo, view = "cycle", cond = list (age = c(30), speed = 1), n.grid = 101, rm.ranef = TRUE)
 
-saveRDS(mod, "output/gamlss_allspeed_ankle.RDS")
+saveRDS(mod, "output/gamlss_allspeed_ankle2.RDS")
