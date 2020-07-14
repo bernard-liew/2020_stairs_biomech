@@ -36,6 +36,7 @@ form <-  val ~ ba (~ ti (cycle, k = 30, bs = bs) +
                      #ti (cycle, speed, age, d = c(2, 1), k = c(30, 5), bs = b) + # adds to the computation time
                      ti (cycle, ht, k = c(30, 5), bs = bs) +
                      ti(ht, k = 5, bs = bs) +
+                     ti (cycle, k = 15, by = study, bs = "re") + 
                      s(subj, bs = 're') +
                      sex)
 
