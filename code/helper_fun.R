@@ -192,3 +192,134 @@ select_middle <- function(x) {
   
 }
 
+
+
+get_cyclic_surface <- function (dat, at_speed) {
+  
+  df <- dat %>%
+    mutate (lwr = fit - CI,
+            upr = fit + CI) %>%
+    filter (speed == at_speed)
+  
+  fit <- df %>%
+    dplyr::select (cycle, age, speed, fit) %>%
+    pivot_wider(names_from = "cycle",
+                values_from = "fit")%>%
+    select (-c(age, speed)) %>%
+    as.matrix()
+  
+  lwr <- df %>%
+    dplyr::select (cycle, age, speed, lwr) %>%
+    pivot_wider(names_from = "cycle",
+                values_from = "lwr")%>%
+    select (-c(age, speed)) %>%
+    as.matrix()
+  
+  upr <- df %>%
+    dplyr::select (cycle, age, speed, upr) %>%
+    pivot_wider(names_from = "cycle",
+                values_from = "upr")%>%
+    select (-c(age, speed)) %>%
+    as.matrix()
+  
+  surf_dat <- list (age = sort (unique (dat$age)),
+                    cycle = 1:101,
+                    fit = fit,
+                    lwr = lwr, 
+                    upr = upr)
+  return (surf_dat)
+  
+  
+}
+
+get_peak_surface <- function (dat, joint, start, end, what_peak = c("max", "min")) {
+  
+  
+  
+  df <- dat[[joint]] %>%
+    mutate (lwr = fit - CI,
+            upr = fit + CI) 
+  
+  switch (what_peak,
+          
+          max = {
+            fit <- df %>%
+              filter (cycle > start & cycle < end) %>%
+              group_by(age, speed) %>%
+              slice (which.max (fit)) %>%
+              ungroup () 
+          },
+          min = {
+            fit <- df %>%
+              filter (cycle > start & cycle < end) %>%
+              group_by(age, speed) %>%
+              slice (which.max (fit)) %>%
+              ungroup () 
+          }
+  )
+  
+  
+  pwr <- fit %>%
+    dplyr::select(age, speed, fit) %>%
+    pivot_wider(names_from = "age",
+                values_from = "fit")%>%
+    dplyr::select(-speed) %>%
+    as.matrix()
+  
+  lwr <- fit %>%
+    dplyr::select(age, speed, lwr) %>%
+    pivot_wider(names_from = "age",
+                values_from = "lwr")%>%
+    dplyr::select(-speed) %>%
+    as.matrix()
+  
+  upr <- fit %>%
+    dplyr::select(age, speed, upr) %>%
+    pivot_wider(names_from = "age",
+                values_from = "upr")%>%
+    dplyr::select(-speed) %>%
+    as.matrix()
+  
+  surf_dat <- list (age = sort (unique (df$age)),
+                    speed = sort (unique (df$speed)),
+                    fit = pwr,
+                    lwr = lwr, 
+                    upr = upr)
+  return (surf_dat)
+  
+  
+  
+}
+
+point_infer <- function (dat) {
+  
+  ggplot (data = dat) +
+    geom_line (aes (x = age, y = fit)) +
+    geom_ribbon(aes (x = age, ymin = fit - CI, ymax = fit + CI), alpha = 0.4) +
+    facet_wrap(~ as.factor (speed), scales = "free") +
+    scale_color_manual (values = CPCOLS ) +
+    scale_fill_manual (values = CPCOLS ) +
+    labs (x = "Age(yrs)",
+          y = "Power (W/kg)") +
+    guides (fill = FALSE) +
+    theme (text = element_text (size = 16)) +
+    theme_cowplot()
+  
+}
+
+cycle_infer <- function (dat) {
+  
+  ggplot (data = dat) +
+    geom_line (aes (x = cycle, y = fit, color = as.factor (age))) +
+    geom_ribbon(aes (x = cycle, ymin = fit - CI, ymax = fit + CI, fill = as.factor (age)), alpha = 0.4) +
+    facet_wrap(~ as.factor (speed), scales = "free") +
+    scale_color_manual (values = CPCOLS ) +
+    scale_fill_manual (values = CPCOLS ) +
+    labs (x = "% Stride",
+          y = "Power (W/kg)",
+          color = "Age (yrs)") +
+    guides (fill = FALSE) +
+    theme (text = element_text (size = 16)) +
+    theme_cowplot()
+  
+}
