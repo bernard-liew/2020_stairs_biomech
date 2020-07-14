@@ -680,7 +680,7 @@ df <- df.list %>%
 
 ```{r}
 
-age_cut <- seq (5, 95, 10)
+age_cut <- seq (10, 90, 10)
 age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
 
 speed_cut <- seq (0, 2.5, 0.5)
@@ -690,15 +690,21 @@ df_plot <- df %>%
   mutate (age_cat  = cut (age, age_cut, labels = age_labels),
           speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
   group_by(study, speed_cat, age_cat, joint, cycle) %>%
-  summarize (val = mean(val, na.rm = TRUE)) %>%
-  ungroup ()
+  summarize (val.mean = mean(val, na.rm = TRUE),
+             val.sd = sd(val, na.rm = TRUE),
+             val.skew = e1071::skewness(val),
+             val.kurt = e1071::kurtosis(val)) %>%
+  ungroup () %>%
+  pivot_longer(cols = starts_with("val"),
+               names_to = "var",
+               values_to = "val")
 
 
 
 f <- ggplot (data = df_plot) +
   geom_line (aes (x = cycle, y = val, colour = study, linetype = speed_cat)) +
   guides(colour = guide_legend(title="Speed (m/s)")) +
-  facet_wrap_paginate(age_cat~joint, ncol = 3, nrow = 2, page = 3)
+  facet_wrap_paginate(age_cat~joint + var, ncol = 4, nrow = 2, scales = "free")
 
 n <- n_pages(f)
 
@@ -708,7 +714,7 @@ pdf (width = 10, height = 8, file = file.path(output_dir, fig_name))
 
 for (i in 1:n) {
   
-  print (f + facet_wrap_paginate(age_cat ~ joint, ncol = 3, nrow = 2, page = i))
+  print (f + facet_wrap_paginate(var+joint ~  age_cat, ncol = 4, nrow = 2, page = i, scales = "free"))
   
 }
 
@@ -810,6 +816,60 @@ dev.off()
 
 ```
 
+## SD
+
+### By cycle
+
+```{r}
+df %>%
+  group_by(subj, joint, cycle) %>%
+  summarise(val = sd (val)) %>%
+  ggplot () +
+  geom_line (aes (x = cycle, y = val)) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 0)
+```
+
+### By  age
+
+```{r}
+df %>%
+  group_by(joint, age) %>%
+  summarise(val = sd (val)) %>%
+  ggplot () +
+  geom_line (aes (x = age, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 0)
+
+```
+
+### By speed
+
+```{r}
+df %>%
+  group_by(joint, speed) %>%
+  summarise(val = sd (val)) %>%
+  ggplot () +
+  geom_line (aes (x = speed, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 0)
+
+```
+
+### By height
+
+```{r}
+df %>%
+  group_by(joint, ht) %>%
+  summarise(val = sd (val)) %>%
+  ggplot () +
+  geom_line (aes (x = ht, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 0)
+
+```
+
+
 ## Skewness
 
 ### By cycle
@@ -900,6 +960,19 @@ df %>%
   geom_line (aes (x = speed, y = val )) +
   facet_wrap(~ joint, ncol = 3) +
   geom_hline (yintercept = 3)
+
+```
+
+### By height
+
+```{r}
+df %>%
+  group_by(joint, ht) %>%
+  summarise(val = e1071::kurtosis (val)) %>%
+  ggplot () +
+  geom_line (aes (x = ht, y = val )) +
+  facet_wrap(~ joint, ncol = 3) +
+  geom_hline (yintercept = 0)
 
 ```
 
