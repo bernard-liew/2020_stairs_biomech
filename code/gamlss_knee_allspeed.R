@@ -16,7 +16,7 @@ library (itsadug)
 
 frac <- 1
 
-dat <- readRDS("output/df_clean_allspeed.RDS")  %>%
+dat <- readRDS("output/df_clean_allspeed_outRm.RDS")  %>%
   filter (joint == "knee") %>% 
   filter(study != "lencioni") %>% # data reported dissimilar to others
   group_by(subj, speed, age, sex, ht, wt, study)%>% 
@@ -60,4 +60,4 @@ smo <- getSmo(mod)
 
 plot_smooth(smo, view = "cycle", cond = list (age = c(30), speed = 1), n.grid = 101, rm.ranef = TRUE)
 
-saveRDS(mod, "output/gamlss_allspeed_knee4.RDS")
+saveRDS(mod, "output/gamlss_allspeed_knee_outRm.RDS")
