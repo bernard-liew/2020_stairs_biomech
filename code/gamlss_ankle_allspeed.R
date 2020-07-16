@@ -33,10 +33,10 @@ form <-  val ~ ba (~ ti (cycle, k = 30, bs = bs) +
                      ti (cycle, age, k = c(30, 5), bs = bs) +
                      ti (cycle, speed, k = c(30, 5), bs = bs) +
                      ti (age, speed, k = c(5, 5), bs = bs) +
-                     #ti (cycle, speed, age, d = c(2, 1), k = c(30, 5), bs = b) + # adds to the computation time
-                     ti (cycle, ht, k = c(30, 5), bs = bs) +
+                     ti (cycle, speed, age, k = c(15, 5, 5), bs = bs) + # adds to the computation time
+                     ti (cycle, ht, k = c(15, 5), bs = bs) +
                      ti(ht, k = 5, bs = bs) +
-                     ti (cycle, k = 15, by = study, bs = "re") + 
+                     ti (cycle, k = 10, by = study, bs = "re") + 
                      s(subj, bs = 're') +
                      sex)
 
@@ -57,4 +57,4 @@ smo <- getSmo(mod)
 
 plot_smooth(smo, view = "cycle", cond = list (age = c(30), speed = 1), n.grid = 101, rm.ranef = TRUE)
 
-saveRDS(mod, "output/gamlss_allspeed_ankle3.RDS")
+saveRDS(mod, "output/gamlss_allspeed_ankle4.RDS")
