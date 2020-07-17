@@ -5,7 +5,7 @@ library (tidyverse)
 
 # modelling
 library (gamlss)
-
+library (gamlss.add)
 # plot
 library (itsadug)
 library(mgcViz)
@@ -18,11 +18,24 @@ source ("code/helper_fun.R")
 smo_list <- list()
 jts <- c("ankle", "knee", "hip")
 
-for (n in seq_along(jts)) {
+if (type == "gamlss"){
   
-  smo_list[[n]] <- getSmo(readRDS(file.path("output", paste0("gamlss_allspeed_", jts[n],"3.RDS")))) 
+   for (n in seq_along(jts)) {
+    
+    smo_list[[n]] <- getSmo(readRDS(file.path("output", paste0("gamlss_allspeed_", jts[n],"_outRm.RDS")))) 
+    
+  }
   
-}
+} else {
+    
+  for (n in seq_along(jts)) {
+    
+    smo_list[[n]] <- readRDS(file.path("output", paste0("bam_selfspeed_", jts[n],".RDS")))
+    
+  }
+    
+    
+  }
 
 
 # Plot inference -------------------------------------------------------------------
@@ -38,7 +51,7 @@ for (n in seq_along(jts)) {
   p_list[[n]] <- get_predictions (smo_list[[n]],
                                   cond = list (age = seq(20, 80, 10),
                                                cycle = seq (1, 101, 1),
-                                               speed = c(0.5, 1, 1.5),
+                                               speed = c(1, 1.5),
                                                sex = factor ("m", levels = c("m", "f")),
                                                ht = 1.7),
                                   rm.ranef = TRUE,
@@ -75,7 +88,6 @@ p1 <-  plot_grid(p,
                  legend, 
                  ncol = 1, 
                  rel_heights = c(1, .05)) 
-
 p1
 ## Peak value inference-------------------------------------------------------------
 ### New data -----------------------------------------------------------------------
@@ -87,7 +99,7 @@ for (n in seq_along(jts)) {
   p_list[[n]] <- get_predictions (smo_list[[n]],
                                   cond = list (age = seq(20, 85, 1),
                                                cycle = seq (1, 101, 1),
-                                               speed = c (0.5, 1, 1.5),
+                                               speed = c (1, 1.5),
                                                sex = factor ("m", levels = c("m", "f")),
                                                ht = 1.7),
                                   rm.ranef = TRUE,
@@ -102,12 +114,12 @@ a2 <- p_list$ankle %>%
   slice (which.max (fit))
 
 h3 <- p_list$hip %>% 
-  filter (cycle > 40 & cycle < 70) %>%
+  filter (cycle > 40 & cycle < 75) %>%
   group_by(age, speed) %>%
   slice (which.max (fit))
 
 h1 <- p_list$hip %>% 
-  filter (cycle < 40) %>%
+  filter (cycle >10 & cycle < 40) %>%
   group_by(age, speed) %>%
   slice (which.max (fit))
 
