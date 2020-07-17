@@ -9,8 +9,6 @@ editor_options:
 
 ```{r}
 
-rm (list = ls())
-
 # Helper
 library (tidyverse)
 
@@ -28,9 +26,6 @@ library (gganimate)
 library (rainbow)
 library (mrfDepth)
 
-# modelling
-library (FDboost)
-
 # parallel
 library(doParallel)
 library(foreach)
@@ -42,7 +37,7 @@ source ("code/helper_fun.R")
 
 ```
 
-# Import raw data
+# Import raw data from all datasets
 
 ```{r}
 
@@ -653,7 +648,8 @@ df.list$df_fukuchi<- temp3
 ```
 
 
-# Combine five data
+# Combine five data into one
+
 ## Change subj names
 
 ```{r}
@@ -674,52 +670,6 @@ df <- df.list %>%
   bind_rows() %>%
   mutate (sex = str_trim(sex)) %>%
   mutate (ht = ifelse (ht > 3, ht / 100, ht)) 
-```
-
-## Plot of power over cycle, age, speed
-
-```{r}
-
-age_cut <- seq (10, 90, 10)
-age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
-
-speed_cut <- seq (0, 2.5, 0.5)
-speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
-
-df_plot <- df %>%
-  mutate (age_cat  = cut (age, age_cut, labels = age_labels),
-          speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
-  group_by(study, speed_cat, age_cat, joint, cycle) %>%
-  summarize (val.mean = mean(val, na.rm = TRUE),
-             val.sd = sd(val, na.rm = TRUE),
-             val.skew = e1071::skewness(val),
-             val.kurt = e1071::kurtosis(val)) %>%
-  ungroup () %>%
-  pivot_longer(cols = starts_with("val"),
-               names_to = "var",
-               values_to = "val")
-
-
-
-f <- ggplot (data = df_plot) +
-  geom_line (aes (x = cycle, y = val, colour = study, linetype = speed_cat)) +
-  guides(colour = guide_legend(title="Speed (m/s)")) +
-  facet_wrap_paginate(age_cat~joint + var, ncol = 4, nrow = 2, scales = "free")
-
-n <- n_pages(f)
-
-fig_name <- "summary_plots.pdf"
-
-pdf (width = 10, height = 8, file = file.path(output_dir, fig_name))
-
-for (i in 1:n) {
-  
-  print (f + facet_wrap_paginate(var+joint ~  age_cat, ncol = 4, nrow = 2, page = i, scales = "free"))
-  
-}
-
-dev.off()
-
 ```
 
 # Explore distributions
@@ -816,7 +766,7 @@ dev.off()
 
 ```
 
-## SD
+## Explore SD
 
 ### By cycle
 
@@ -870,7 +820,7 @@ df %>%
 ```
 
 
-## Skewness
+## Explore Skewness
 
 ### By cycle
 
@@ -923,7 +873,7 @@ df %>%
 
 ```
 
-## Kurtosis
+## Explore Kurtosis
 
 ### By cycle
 
@@ -990,9 +940,12 @@ saveRDS(df, file = file.path(output_dir, file_name))
 
 # Further remove outliers
 
-## Plot all curves
+## Keep all speed data
+
+### Import cleaned data
 
 ```{r}
+rm (list = ls())
 
 dat <- readRDS("output/df_clean_allspeed.RDS") %>%
   group_by(subj, speed, age, sex, ht, wt, study)%>% 
@@ -1003,6 +956,15 @@ dat <- readRDS("output/df_clean_allspeed.RDS") %>%
          study = as.factor(study)) %>%
   as.data.frame() %>%
   arrange (study, subj, joint, cond, speed, cycle)  
+
+
+```
+
+
+
+### Individual plots for all speed
+
+```{r}
 
 dat_wide <- dat %>%
   pivot_wider(names_from = "cycle", values_from = "val")
@@ -1038,7 +1000,180 @@ dev.off()
   
 ```
 
-## Remove outliers and replot
+### Remove outliers and replot
+
+```{r}
+
+temp2 <- dat_wide
+
+
+
+for (n in seq_along(unique (temp2$joint))) {
+  
+  var <- unique (temp2$joint)[n]
+  
+  temp2 [temp2$joint == var, names (temp2) %in% c(1:101)] <- 
+    my_outlier(temp2 [temp2$joint == var, names (temp2) %in% c(1:101)])
+  
+  
+  
+}
+
+temp3 <- temp2 %>%
+  na.omit() %>%
+  pivot_longer(cols = c(`1`:`101`),
+               names_to = "cycle",
+               # names_ptypes = list (cycle = numeric()),
+               values_to = "val")
+
+temp3$cycle <- parse_number(temp3$cycle)
+temp3$subj <- parse_number(temp3$cycle)
+
+temp4 <- temp3 %>%
+  pivot_wider(names_from = "cycle", values_from = "val")
+
+
+by_group <- temp4 %>%
+  group_by(joint)
+
+by_key <- by_group  %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+
+names(df_plot) <- by_key$joint
+
+
+
+pdf (width = 10, height = 8, file = file.path("output", "all_data_clean.pdf"))
+
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
+dev.off()
+
+
+```
+
+### Export cleaned datadata
+ 
+```{r}
+
+output_dir <- "output"
+file_name <- "df_clean_allspeed_outRm.RDS"
+
+saveRDS(temp3, file = file.path(output_dir, file_name))
+
+```
+
+### Group plot power over cycle, age, speed
+
+```{r}
+
+temp3
+
+age_cut <- seq (10, 90, 10)
+age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
+
+speed_cut <- seq (0, 2.4, 0.2)
+speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
+
+df_plot <- temp3 %>%
+  filter(study != "lencioni") %>% # data reported dissimilar to others
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels),
+          speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
+  group_by(speed_cat, age_cat, joint, cycle) %>%
+  summarize (val.mean = mean(val, na.rm = TRUE)) 
+
+f <- ggplot (data = df_plot) +
+  geom_line (aes (x = cycle, y = val.mean, colour = age_cat)) +
+  guides(colour = guide_legend(title="Age (yrs)")) +
+  facet_wrap_paginate(speed_cat~joint, ncol = 3, nrow = 3, scales = "free")
+
+n <- n_pages(f)
+
+fig_name <- "summary_plots.pdf"
+
+pdf (width = 10, height = 8, file = file.path(output_dir, fig_name))
+
+for (i in 1:n) {
+  
+  print (f + facet_wrap_paginate(speed_cat~joint, ncol = 3, nrow = 3,  page = i, scales = "free"))
+  
+}
+
+dev.off()
+
+```
+
+## Self speed data only
+
+### Import cleaned data
+
+```{r}
+rm (list = ls())
+
+dat <- readRDS("output/df_clean_allspeed.RDS") %>%
+  filter (cond %in% c("walkt05", "self", "c4")) %>% 
+  group_by(subj, speed, age, sex, ht, wt, study)%>% 
+  sample_frac(frac) %>%
+  ungroup () %>%
+  mutate(sex = as.factor(sex),
+         subj = as.factor(subj),
+         study = as.factor(study)) %>%
+  as.data.frame() %>%
+  arrange (study, subj, joint, cond, speed, cycle)  
+
+
+```
+
+
+### Plot all curves
+
+```{r}
+frac <- 1
+
+by_group <- dat_wide %>%
+  group_by(joint)
+
+by_key <- by_group  %>%
+  group_keys() 
+
+df_plot <- by_group %>%
+  group_split() %>%
+  map (.%>% dplyr::select (-(subj:study)) %>% as.matrix)
+  
+names(df_plot) <- by_key$joint
+
+pdf (width = 10, height = 8, file = file.path("output", "all_data.pdf"))
+
+par(mfrow=c(2,2))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "cycle", 
+                   yname = names (df_plot)[i])
+  plot.fds(samp_fds)
+  
+}
+dev.off()
+
+  
+```
+
+### Remove outliers and replot
 
 ```{r}
 
@@ -1106,18 +1241,18 @@ dev.off()
 ```
 
 
-# Export data
+### Export data
  
 ```{r}
 
 output_dir <- "output"
-file_name <- "df_clean_allspeed_outRm.RDS"
+file_name <- "df_clean_self_outRm.RDS"
 
 saveRDS(temp3, file = file.path(output_dir, file_name))
 
 ```
 
-## Plot of power over cycle, age, speed
+### Plot of power over cycle, age, speed
 
 ```{r}
 
@@ -1126,7 +1261,7 @@ temp3
 age_cut <- seq (10, 90, 10)
 age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
 
-speed_cut <- seq (0, 2.4, 0.2)
+speed_cut <- seq (0.6, 2.4, 0.2)
 speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
 
 df_plot <- temp3 %>%
@@ -1143,7 +1278,7 @@ f <- ggplot (data = df_plot) +
 
 n <- n_pages(f)
 
-fig_name <- "summary_plots.pdf"
+fig_name <- "summary_self_plots.pdf"
 
 pdf (width = 10, height = 8, file = file.path(output_dir, fig_name))
 
