@@ -19,8 +19,13 @@ frac <- 1
 dat <- readRDS("output/df_clean_allspeed_outRm.RDS")  %>%
   filter (joint == "hip") %>% 
   filter(study != "lencioni") %>% # data reported dissimilar to others
-  group_by(subj, speed, age, sex, ht, wt, study)%>% 
-  sample_frac(frac) %>%
+  mutate (speed_rd  = round (speed, 1)) %>%
+  group_by(subj, study, joint, cond, speed_rd, cycle, sex) %>%
+  summarize (val = mean (val),
+             speed = mean (speed),
+             age = age[1],
+             ht = ht[1],
+             wt = wt[1]) %>%
   ungroup () %>%
   mutate(sex = as.factor(sex),
          subj = as.factor(subj),
