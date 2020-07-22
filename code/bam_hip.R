@@ -25,9 +25,9 @@ dat <- readRDS("output/df_clean_self_outRm.RDS")  %>%
              ht = round (ht[1],2),
              wt = wt[1]) %>%
   ungroup () %>%
-  mutate(sex = as.factor(sex),
-         subj = as.factor(subj),
-         study = as.factor(study)) %>%
+  mutate(sex = factor(sex),
+         subj = factor(subj),
+         study = factor(study)) %>%
   as.data.frame()
 
 
@@ -38,13 +38,13 @@ n_age <- length (unique(dat$age))
 n_speed <- length (unique(dat$speed))
 n_ht <- length (unique(dat$ht))
 
-form <-  val ~  ti (cycle, k = 20, bs = bs) +
-  ti (age, k = 25, bs = bs) +
-  ti (speed, k = 5, bs = bs) +
-  ti (cycle, age, k = c(20, 12), bs = bs) +
-  ti (cycle, speed, k = c(20, 5),  bs = bs) +
-  ti (age, speed,  k = c(12, 5),  bs = bs) +
-  ti (cycle, speed, age,  k = c(20, 5, 5), bs = bs) + # adds to the computation time
+form <-  val ~  ti (cycle, k = 40, bs = bs) +
+  ti (age, k = 30, bs = bs) +
+  ti (speed, k = 7, bs = bs) +
+  ti (cycle, age, k = c(30, 15), bs = bs) +
+  ti (cycle, speed, k = c(30, 5),  bs = bs) +
+  ti (age, speed,  k = c(15, 5),  bs = bs) +
+  ti (cycle, speed, age,  k = c(20, 5, 7), bs = bs) + # adds to the computation time
   ti (cycle, ht, k = c(20, 10), bs = bs) +
   ti(ht, k = 10, bs = bs) +
   ti (cycle, k = 20, by = study, bs = "re") + 
@@ -62,7 +62,7 @@ mod <- bam (form,
 )
 # Diagnostics ----------------------------------------------------------------------
 
-b <- getViz(mod2)
+b <- getViz(mod)
 check (b)
 
 fit <- fitted(mod)

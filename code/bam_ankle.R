@@ -23,9 +23,9 @@ dat <- readRDS("output/df_clean_self_outRm.RDS")  %>%
              ht = round (ht[1],2),
              wt = wt[1]) %>%
   ungroup () %>%
-  mutate(sex = as.factor(sex),
-         subj = as.factor(subj),
-         study = as.factor(study)) %>%
+  mutate(sex = factor(sex),
+         subj = factor(subj),
+         study = factor(study)) %>%
   as.data.frame()
 
 
@@ -36,8 +36,8 @@ n_age <- length (unique(dat$age))
 n_speed <- length (unique(dat$speed))
 n_ht <- length (unique(dat$ht))
 
-form <-  val ~  ti (cycle, k = 20, bs = bs) +
-  ti (age, k = 25, bs = bs) +
+form <-  val ~  ti (cycle, k = 30, bs = bs) +
+  ti (age, k = 12, bs = bs) +
   ti (speed, k = 5, bs = bs) +
   ti (cycle, age, k = c(20, 12), bs = bs) +
   ti (cycle, speed, k = c(20, 5),  bs = bs) +
