@@ -1,8 +1,7 @@
 # Load packages ---------------------------------------------------------------------
 
 # Helper
-library (dplyr)
-library (tidyr)
+library (tidyverse)
 
 # modelling
 library (gamlss)
@@ -30,24 +29,24 @@ dat <- readRDS("output/df_clean_self_outRm.RDS")  %>%
 bs <-  "cr"
 
 form <-  val ~ ba (~ ti (cycle, k = 30, bs = bs) +
-                     ti (age, k = 5, bs = bs) +
+                     ti (age, k = 25, bs = bs) +
                      ti (speed, k = 5, bs = bs) +
-                     ti (cycle, age, k = c(30, 5), bs = bs) +
-                     ti (cycle, speed, k = c(30, 5), bs = bs) +
-                     ti (age, speed, k = c(5, 5), bs = bs) +
-                     ti (cycle, speed, age, k = c(15, 5, 5), bs = bs) + # adds to the computation time
-                     ti (cycle, ht, k = c(30, 5), bs = bs) +
-                     ti(ht, k = 5, bs = bs) +
-                     ti (cycle, k = 15, by = study, bs = "re") + 
+                     ti (cycle, age, k = c(20, 12), bs = bs) +
+                     ti (cycle, speed, k = c(20, 5),  bs = bs) +
+                     ti (age, speed,  k = c(12, 5),  bs = bs) +
+                     ti (cycle, speed, age,  k = c(20, 5, 5), bs = bs) + # adds to the computation time
+                     ti (cycle, ht, k = c(20, 10), bs = bs) +
+                     ti(ht, k = 10, bs = bs) +
+                     ti (cycle, k = 20, by = study, bs = "re") + 
                      s(subj, bs = 're') +
                      sex)
 
 # Modelling ------------------------------------------------------------------------
 mod <- gamlss(form,
-              sigma.fo = ~ ba (~ ti(cycle, bs = bs, k = 30) +
-                                 ti(speed, bs = bs, k = 5) +
-                                 ti(cycle, speed, k = c(30, 5), bs = bs)),
-              nu.fo = ~ ba (~ ti(cycle, bs = bs, k = 30)),
+              sigma.fo = ~ ba (~ ti(cycle, bs = bs, k = 20)+
+                                 ti (speed, k = 5, bs = bs) +
+                                 ti (cycle, speed, k = c(20, 5),  bs = bs)),
+              nu.fo = ~ ba (~ ti(cycle, bs = bs, k = 20)),
               family = "TF",
               discrete = TRUE,
               data = dat,
