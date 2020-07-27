@@ -26,7 +26,8 @@ dat <- readRDS("output/df_clean_self_outRm.RDS")  %>%
   mutate(sex = factor(sex),
          subj = factor(subj),
          study = factor(study)) %>%
-  as.data.frame()
+  as.data.frame()%>%
+  filter (cycle <70 & cycle > 20)
 
 
 
@@ -36,16 +37,16 @@ n_age <- length (unique(dat$age))
 n_speed <- length (unique(dat$speed))
 n_ht <- length (unique(dat$ht))
 
-form <-  val ~  ti (cycle, k = 30, bs = bs) +
-  ti (age, k = 12, bs = bs) +
+form <-  val ~  ti (cycle, k = 25, bs = bs) +
+  ti (age, k = 15, bs = bs) +
   ti (speed, k = 5, bs = bs) +
-  ti (cycle, age, k = c(20, 12), bs = bs) +
-  ti (cycle, speed, k = c(20, 5),  bs = bs) +
-  ti (age, speed,  k = c(12, 5),  bs = bs) +
-  ti (cycle, speed, age,  k = c(20, 5, 5), bs = bs) + # adds to the computation time
-  ti (cycle, ht, k = c(20, 10), bs = bs) +
+  ti (cycle, age, k = c(15, 15), bs = bs) +
+  ti (cycle, speed, k = c(15, 5),  bs = bs) +
+  ti (age, speed,  k = c(15, 5),  bs = bs) +
+  ti (cycle, speed, age,  k = c(15, 5, 7), bs = bs) + # adds to the computation time
+  ti (cycle, ht, k = c(15, 10), bs = bs) +
   ti(ht, k = 10, bs = bs) +
-  ti (cycle, k = 20, by = study, bs = "re") + 
+  ti (cycle, k = 15, by = study, bs = "re") + 
   s(subj, bs = 're') +
   sex
 
