@@ -1,7 +1,7 @@
-# Load packages ---------------------------------------------------------------------
 
 # Helper
-library (dplyr)
+library (tidyverse)
+library (splitTools)
 
 # modelling
 library (mgcv)
@@ -11,6 +11,29 @@ library (mgcViz)
 library(itsadug)
 
 # Import data ------------------------------------------------------------------------
+
+age_cut <- seq (0, 90, 30) # Generates the most even split based on visual inspection
+age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
+
+ID <- readRDS("output/df_clean_self_outRm.RDS")  %>%
+  filter (joint == "ankle") %>% 
+  filter(study != "lencioni") %>% # data reported dissimilar to others
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels)) %>%
+  filter (cycle == 1) %>%
+  select (subj,  age_cat) %>%
+  unique() 
+
+# Generate split ID 40% train, 30% test, 30% validate ----------------------------------
+split_id <- partition (ID$age_cat, p = c(0.4, 0.3, 0.3), type = "stratified")
+
+id_train <- ID[split_id[[1]], ] %>%
+  pull (subj)
+id_test <- ID[split_id[[2]], ]%>%
+  pull (subj)
+id_val <- ID[split_id[[3]], ]%>%
+  pull (subj)
+
+rm (ID)
 
 dat <- readRDS("output/df_clean_self_outRm.RDS")  %>%
   filter (joint == "ankle") %>% 
@@ -23,13 +46,30 @@ dat <- readRDS("output/df_clean_self_outRm.RDS")  %>%
              ht = round (ht[1],2),
              wt = wt[1]) %>%
   ungroup () %>%
-  mutate(sex = factor(sex),
-         subj = factor(subj),
-         study = factor(study)) %>%
-  as.data.frame()%>%
+  mutate(sex = factor(sex)) %>%
   filter (cycle <70 & cycle > 20)
 
+# Split data ----------------------------------------------------------------------
 
+dat_train <- dat %>%
+  filter (subj %in% id_train) %>%
+  mutate(subj = factor(subj),
+         study = factor(study)) %>%
+  as.data.frame()
+
+dat_test <- dat %>%
+  filter (subj %in% id_test)%>%
+  mutate(subj = factor(subj),
+         study = factor(study)) %>%
+  as.data.frame()
+
+dat_val <- dat %>%
+  filter (subj %in% id_val) %>%
+  mutate(subj = factor(subj),
+         study = factor(study)) %>%
+  as.data.frame()
+
+# Build formula --------------------------------------------------------------------
 
 bs <-  "cr"
 n_cyc <- length (unique(dat$cycle))
@@ -55,7 +95,7 @@ form <-  val ~  ti (cycle, k = 25, bs = bs) +
 system.time(
   
   mod <- bam (form,
-              data = dat,
+              data = dat_train,
               discrete = TRUE,
               family = scat())
 )
