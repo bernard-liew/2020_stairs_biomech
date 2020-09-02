@@ -24,17 +24,7 @@ df_bo_ankle %>% gather(key = "parameter", value = "value",
 # look at the top configs
 
 df_bo_ankle %>% arrange(Score) %>% select(k_cycle:Score) %>%  head()
-# best score 0.2034274
-
-# => 
-# - cycle effects with max value, 
-# - age effects with min value, 
-# - speed effects with min value, 
-# - ht effects with max value
-# - cycle re min value
-# - cycle+speed interaction
-# - drop all other interactions
-# seem to perform best.
+# best score 0.1306451
 
 ##############################################################################
 ## hip
@@ -56,21 +46,7 @@ df_bo_hip %>% gather(key = "parameter", value = "value",
 # look at the top configs
 
 df_bo_hip %>% arrange(Score) %>% select(k_cycle:Score) %>% head()
-# best score 0.1934729
-
-# => 
-# - cycle effects with max value, 
-# - age effects with min value, 
-# - speed effects with min value, 
-# - ht effects with min value
-# - cycle+age interaction with minimal flexibility
-# - cylce+speed with max/min value
-# - age+speed interaction with minimal value
-# - 3-way TP with max cycle
-# - cycle+height at min
-# - ht at min
-# - cylce re at min
-# seem to perform best.
+# best score 0.1787804
 
 ##############################################################################
 ## knee
@@ -93,10 +69,4 @@ df_bo_knee %>% gather(key = "parameter", value = "value",
 # look at the top configs
 
 df_bo_knee %>% arrange(Score) %>% select(k_cycle:Score) %>%  head()
-# best score 0.1623965
-
-# => 
-# - all max except for speed, drop cycle+ht
-# value seems to perform best.
-
-# => here we could 
+# best score 0.1525697

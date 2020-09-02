@@ -142,6 +142,8 @@ registerDoParallel(cl)
 clusterExport(cl,c('train','test','trueMat','relRMSE', 'RMSE', 'integrate_fun'))
 clusterEvalQ(cl,expr= {
   library(mgcv)
+  library(tidyr)
+  library(dplyr)
 })
 
 set.seed(42)
