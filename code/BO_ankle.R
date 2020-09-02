@@ -1,6 +1,7 @@
 library(ParBayesianOptimization)
 library(mgcv)
 library(dplyr)
+library(tidyr)
 source("code/measures_johnson.R")
 
 # Load data --------------------------------------------------------------------
