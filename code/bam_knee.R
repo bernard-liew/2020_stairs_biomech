@@ -69,6 +69,8 @@ dat_val <- dat %>%
          study = factor(study)) %>%
   as.data.frame()
 
+saveRDS(list(dat_train, dat_test, dat_val), file="output/knee_splitted.RDS")
+
 # Build formula --------------------------------------------------------------------
 
 

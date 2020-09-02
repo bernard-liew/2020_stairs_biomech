@@ -69,6 +69,8 @@ dat_val <- dat %>%
          study = factor(study)) %>%
   as.data.frame()
 
+saveRDS(list(dat_train, dat_test, dat_val), file="output/ankle_splitted.RDS")
+
 # Build formula --------------------------------------------------------------------
 
 bs <-  "cr"
@@ -87,7 +89,7 @@ form <-  val ~  ti (cycle, k = 25, bs = bs) +
   ti (cycle, ht, k = c(15, 10), bs = bs) +
   ti(ht, k = 10, bs = bs) +
   ti (cycle, k = 15, by = study, bs = "re") + 
-  s(subj, bs = 're') +
+  # s(subj, bs = 're') +
   sex
 
 # Modelling ------------------------------------------------------------------------
