@@ -11,7 +11,7 @@ test <- data[[2]]
 test <- test %>% arrange(subj, cycle)
 # create true functional matrix
 # with 49 observations, 1 row = 1 subject
-trueMat <- matrix(test$val, ncol = 101, byrow = T)
+trueMat <- test %>% spread(cycle, val) %>% select(`1`:`101`) %>% as.matrix()
 # does not look too good though (?)
 matplot(t(trueMat), type="l", col = 
           test %>% 
@@ -97,11 +97,14 @@ scoringFunction <- function(
     
   })
   
-  if(class(pr)=="try-error") score <- NA else
-    score <- -mean(relRMSE(trueMat, matrix(pr, ncol = 101, byrow = T)), na.rm=T)
-  # if(is.na(score) | is.nan(score)) score <- 0
-  
-  # saveRDS(score, file=paste0(as.numeric(Sys.time()),".RDS"))
+  if(class(pr)=="try-error") score <- NA else{
+    
+    test$pr <- pr
+    predMat <- test %>% select(-val) %>% spread(cycle, pr) %>% select(`1`:`101`) %>% as.matrix()
+    score <- -mean(relRMSE(trueMat, predMat), na.rm=T)
+    
+    
+  }
   
   return(list(Score = score))
 }
