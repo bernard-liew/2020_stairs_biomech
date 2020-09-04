@@ -62,4 +62,35 @@ res <- mclapply(fams, function(fam){
 
 saveRDS(res, "output/dist_comparison_hip.RDS")
 
-cbind(fams, unlist(res))
+data.frame(family = fams, score = as.numeric(unlist(res))) %>% arrange(score)
+
+# family     score
+# 1       LO 0.1784204
+# 2      NET 0.1785871
+# 3       NO 0.1792777
+# 4      SN2 0.1792972
+# 5      TF2 0.1794587
+# 6       TF 0.1794957
+# 7      SN1 0.1798371
+# 8       PE 0.1801061
+# 9      SST 0.1802301
+# 10     ST4 0.1804185
+# 11     PE2 0.1804216
+# 12    SEP4 0.1805084
+# 13      GT 0.1805940
+# 14    SEP2 0.1806330
+# 15     JSU 0.1809679
+# 16    EGB2 0.1816523
+# 17     ST1 0.1819887
+# 18    SEP3 0.1826011
+# 19     ST5 0.1828416
+# 20   SHASH 0.1837603
+# 21     ST3 0.1839007
+# 22    SEP1 0.1843054
+# 23    JSUo 0.1845248
+# 24  SHASHo 0.1849219
+# 25 SHASHo2 0.1850649
+# 26     ST2 0.1864950
+# 27      GU 0.2051426
+# 28  exGAUS 0.2138433
+# 29      RG 0.2151027

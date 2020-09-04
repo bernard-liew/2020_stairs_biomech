@@ -1,3 +1,5 @@
+## check out variance parameters
+
 source("code/settings_to_formula.R")
 source("code/measures_johnson.R")
 
@@ -8,13 +10,6 @@ library(parallel)
 library(gamlss)
 library(gamlss.dist)
 library(gamlss.add)
-
-fams <- c(
-  "NO", "GU", "RG" ,"LO", "NET", "TF", "TF2", "PE","PE2", 
-  "SN1", "SN2", "exGAUS", "SHASH", "SHASHo","SHASHo2", 
-  "EGB2", "JSU", "JSUo", "SEP1", "SEP2", "SEP3", "SEP4", 
-  "ST1", "ST2", "ST3", "ST4", "ST5", "SST", "GT"
-)
 
 # check suitable distributions
 
@@ -40,26 +35,46 @@ best_setting <- df_bo_knee %>%
 
 form <- do.call(settings_to_formula, best_setting)
 
-form <- as.formula(paste0("val ~ ba(", form, ")"))
+form <- as.formula(paste0("val ~ ba(", form, " + s(subj, bs = 're'))"))
 
-res <- mclapply(fams, function(fam){
+fams <- c(
+  "NO", "GU", "RG" ,"LO", "NET", "TF", "TF2", "PE","PE2", 
+  "SN1", "SN2", "exGAUS", "SHASH", "SHASHo","SHASHo2", 
+  "EGB2", "JSU", "JSUo", "SEP1", "SEP2", "SEP3", "SEP4", 
+  "ST1", "ST2", "ST3", "ST4", "ST5", "SST", "GT"
+)
+
+bestFam <- fams[which.min(unlist(readRDS("output/dist_comparison_knee.RDS")))]
+
+bs = "cr"
+
+sig_formulas <- 
+  list(
+    ~ 1,
+    ~ ba (~ ti(cycle, bs = bs, k = 20)),
+    ~ ba (~ ti(cycle, bs = bs, k = 20)+
+            ti (speed, k = 5, bs = bs)),
+    ~ ba (~ ti(cycle, bs = bs, k = 20)+
+            ti (speed, k = 5, bs = bs) +
+            ti (cycle, speed, k = c(20, 5),  bs = bs))
+  )
+
+mclapply(1:length(sig_formulas), function(i){
   
   mod <- gamlss(form,
-                family = fam,
+                family = bestFam,
+                sigma.fo = sig_formulas[[i]],
                 discrete = TRUE,
                 data = train,
                 n.cyc = 200,
                 trace = TRUE)
   
-  pr <- predict(mod, newdata = test, what = "mu")
-  test$pr <- pr
-  predMat <- test %>% dplyr::select(-val) %>% spread(cycle, pr) %>% dplyr::select(`1`:`101`) %>% as.matrix()
-  score <- mean(relRMSE(trueMat, predMat), na.rm=T)
+  pdf(file = paste0("output/dist_comp_knee_", i, ".pdf"))
+  plot(mod)
+  dev.off()
   
-  return(score)
-  
-}, mc.cores = length(fams))
+}, mc.cores = length(sig_formulas))
 
-saveRDS(res, "output/dist_comparison_knee.RDS")
 
-data.frame(family = fams, score = as.numeric(unlist(res))) %>% arrange(score)
+
+
