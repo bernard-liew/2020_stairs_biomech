@@ -126,8 +126,9 @@ wide_2_long <- function (x) {
     pivot_longer(cols = starts_with("V"),
                  names_to = "cycle",
                  names_prefix = "V",
-                 names_ptypes = list (cycle = numeric()),
-                 values_to = "val")
+                 #names_ptypes = list (cycle = as.numeric()),
+                 values_to = "val") %>%
+    mutate (cycle = as.numeric (cycle))
   
   
 }
