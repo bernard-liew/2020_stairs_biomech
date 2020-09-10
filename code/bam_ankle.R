@@ -15,12 +15,12 @@ library(itsadug)
 age_cut <- seq (0, 90, 30) # Generates the most even split based on visual inspection
 age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
 
-ID <- readRDS("output/df_clean_self_outRm.RDS")  %>%
+ID <- readRDS("output/df_clean_self.RDS")  %>%
   filter (joint == "ankle") %>% 
   filter(study != "lencioni") %>% # data reported dissimilar to others
   mutate (age_cat  = cut (age, age_cut, labels = age_labels)) %>%
   filter (cycle == 1) %>%
-  select (subj,  age_cat) %>%
+  dplyr::select (subj,  age_cat) %>%
   unique() 
 
 # Generate split ID 40% train, 30% test, 30% validate ----------------------------------
@@ -35,18 +35,22 @@ id_val <- ID[split_id[[3]], ]%>%
 
 rm (ID)
 
-dat <- readRDS("output/df_clean_self_outRm.RDS")  %>%
+dat <- readRDS("output/df_clean_self.RDS")  %>%
   filter (joint == "ankle") %>% 
   filter(study != "lencioni") %>% # data reported dissimilar to others
   mutate (speed_rd  = round (speed, 1)) %>%
   group_by(subj, study, joint, cond, speed_rd, cycle, sex) %>%
   summarize (val = mean (val),
              speed = round(mean (speed),1),
+             strlen = round(mean (strlen),1),
+             stplen = round(mean (stplen),1),
              age = age[1],
              ht = round (ht[1],2),
              wt = wt[1]) %>%
   ungroup () %>%
-  mutate(sex = factor(sex)) %>%
+  mutate(sex = factor(sex),
+         study = factor (study),
+         subj = factor (subj)) %>%
   filter (cycle <70 & cycle > 20)
 
 # Split data ----------------------------------------------------------------------
