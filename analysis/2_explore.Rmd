@@ -947,6 +947,8 @@ saveRDS(df, file = file.path(output_dir, file_name))
 ```{r}
 rm (list = ls())
 
+frac <- 1
+
 dat <- readRDS("output/df_clean_allspeed.RDS") %>%
   group_by(subj, speed, age, sex, ht, wt, study)%>% 
   sample_frac(frac) %>%
@@ -1027,7 +1029,6 @@ temp3 <- temp2 %>%
                values_to = "val")
 
 temp3$cycle <- parse_number(temp3$cycle)
-temp3$subj <- parse_number(temp3$cycle)
 
 temp4 <- temp3 %>%
   pivot_wider(names_from = "cycle", values_from = "val")
@@ -1134,6 +1135,11 @@ dat <- readRDS("output/df_clean_allspeed.RDS") %>%
   as.data.frame() %>%
   arrange (study, subj, joint, cond, speed, cycle)  
 
+output_dir <- "output"
+file_name <- "df_clean_self.RDS"
+
+saveRDS(dat, file = file.path(output_dir, file_name))
+
 
 ```
 
@@ -1142,6 +1148,9 @@ dat <- readRDS("output/df_clean_allspeed.RDS") %>%
 
 ```{r}
 frac <- 1
+
+dat_wide <- dat %>%
+  pivot_wider(names_from = "cycle", values_from = "val")
 
 by_group <- dat_wide %>%
   group_by(joint)
@@ -1177,6 +1186,10 @@ dev.off()
 
 ```{r}
 
+dat_wide <- dat %>%
+  pivot_wider(names_from = "cycle", values_from = "val")
+  
+
 temp2 <- dat_wide
 
 
@@ -1200,7 +1213,7 @@ temp3 <- temp2 %>%
                values_to = "val")
 
 temp3$cycle <- parse_number(temp3$cycle)
-temp3$subj <- parse_number(temp3$cycle)
+
 
 temp4 <- temp3 %>%
   pivot_wider(names_from = "cycle", values_from = "val")
