@@ -42,9 +42,12 @@ form <- do.call(settings_to_formula, best_setting)
 
 form <- as.formula(paste0("val ~ ba(", form, ")"))
 
+form.sigma <- ~ ba( ~ ti(cycle, bs = "cr", k = 20))
+
 res <- mclapply(fams, function(fam){
   
-  mod <- gamlss(form,
+  mod <- gamlss(form, 
+                sigma.formula = form.sigma,
                 family = fam,
                 discrete = TRUE,
                 data = train,
@@ -65,32 +68,32 @@ saveRDS(res, "output/dist_comparison_ankle.RDS")
 data.frame(family = fams, score = as.numeric(unlist(res))) %>% arrange(score)
 
 # family     score
-# 1      PE2 0.1278581
-# 2       LO 0.1292479
-# 3     SEP2 0.1297898
-# 4     JSUo 0.1307492
-# 5      ST2 0.1309096
-# 6      ST3 0.1309126
-# 7      ST4 0.1309401
-# 8      ST5 0.1310988
-# 9       TF 0.1313788
-# 10     TF2 0.1314001
-# 11    SEP1 0.1317841
-# 12      NO 0.1319597
-# 13     NET 0.1320162
-# 14     JSU 0.1328559
-# 15      GT 0.1333066
-# 16     SN1 0.1333096
-# 17     SST 0.1338726
-# 18    EGB2 0.1344008
-# 19    SEP4 0.1349272
-# 20   SHASH 0.1356725
-# 21      PE 0.1366461
-# 22     ST1 0.1367283
-# 23    SEP3 0.1368184
-# 24     SN2 0.1431637
-# 25  SHASHo 0.1485798
-# 26      GU 0.1523686
-# 27 SHASHo2 0.1583780
-# 28      RG 0.1802263
-# 29  exGAUS 0.2276932
+# 1       NO 0.1276233
+# 2   exGAUS 0.1276581
+# 3       LO 0.1287771
+# 4      SN2 0.1291027
+# 5      SST 0.1291457
+# 6      NET 0.1292363
+# 7      JSU 0.1294145
+# 8       GT 0.1295832
+# 9      TF2 0.1295979
+# 10      TF 0.1296064
+# 11     ST4 0.1297157
+# 12     ST1 0.1305030
+# 13     ST3 0.1312044
+# 14   SHASH 0.1314781
+# 15     ST5 0.1315827
+# 16    EGB2 0.1318828
+# 17    SEP4 0.1320949
+# 18    JSUo 0.1322061
+# 19 SHASHo2 0.1322354
+# 20  SHASHo 0.1322690
+# 21     PE2 0.1324795
+# 22      PE 0.1326027
+# 23    SEP1 0.1343751
+# 24     ST2 0.1344306
+# 25    SEP3 0.1345648
+# 26    SEP2 0.1371019
+# 27      GU 0.1454116
+# 28      RG 0.1535834
+# 29     SN1 0.1728873

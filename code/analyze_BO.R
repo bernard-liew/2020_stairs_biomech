@@ -18,11 +18,6 @@ df_bo_ankle %>% gather(key = "parameter", value = "value",
   ggplot(aes(x = parameter, y = value, colour = Score)) + 
   geom_point(alpha = 0.3)
 
-# => there does not seem to be a clear picture if 
-# each parameter is checked on its own.
-
-# look at the top configs
-
 df_bo_ankle %>% arrange(Score) %>% select(k_cycle:Score) %>%  head()
 # best score 0.1306451
 
@@ -39,9 +34,6 @@ df_bo_hip %>% gather(key = "parameter", value = "value",
                        k_cycle:k_cycle_re) %>% 
   ggplot(aes(x = parameter, y = value, colour = Score)) + 
   geom_point(alpha = 0.3)
-
-# => there does not seem to be a clear picture if 
-# each parameter is checked on its own.
 
 # look at the top configs
 
@@ -63,8 +55,6 @@ df_bo_knee %>% gather(key = "parameter", value = "value",
   ggplot(aes(x = parameter, y = value, colour = Score)) + 
   geom_point(alpha = 0.3)
 
-# => there does not seem to be a clear picture if 
-# each parameter is checked on its own.
 
 # look at the top configs
 

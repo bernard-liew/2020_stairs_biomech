@@ -42,9 +42,12 @@ form <- do.call(settings_to_formula, best_setting)
 
 form <- as.formula(paste0("val ~ ba(", form, ")"))
 
+form.sigma <- ~ ba( ~ ti(cycle, bs = "cr", k = 20))
+
 res <- mclapply(fams, function(fam){
   
-  mod <- gamlss(form,
+  mod <- gamlss(form, 
+                sigma.formula = form.sigma,
                 family = fam,
                 discrete = TRUE,
                 data = train,
@@ -63,3 +66,34 @@ res <- mclapply(fams, function(fam){
 saveRDS(res, "output/dist_comparison_knee.RDS")
 
 data.frame(family = fams, score = as.numeric(unlist(res))) %>% arrange(score)
+
+# family     score
+# 1       NO 0.1454420
+# 2      SN2 0.1457254
+# 3      SN1 0.1462006
+# 4       LO 0.1468011
+# 5      NET 0.1484632
+# 6   exGAUS 0.1493981
+# 7     EGB2 0.1494955
+# 8      ST3 0.1497712
+# 9      SST 0.1497963
+# 10     TF2 0.1498084
+# 11     ST2 0.1498148
+# 12      TF 0.1498303
+# 13     ST4 0.1499901
+# 14     ST5 0.1500184
+# 15     ST1 0.1502102
+# 16     JSU 0.1505610
+# 17    JSUo 0.1506189
+# 18    SEP4 0.1514374
+# 19      GT 0.1514413
+# 20      PE 0.1517480
+# 21    SEP2 0.1519066
+# 22  SHASHo 0.1519179
+# 23 SHASHo2 0.1519190
+# 24   SHASH 0.1520222
+# 25     PE2 0.1520669
+# 26    SEP3 0.1522644
+# 27    SEP1 0.1524177
+# 28      GU 0.1598915
+# 29      RG 0.1706999

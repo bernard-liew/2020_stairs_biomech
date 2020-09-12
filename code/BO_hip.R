@@ -38,7 +38,9 @@ scoringFunction <- function(
   k_cycle_ht_1,
   k_cycle_ht_2,
   k_ht,
-  k_cycle_re
+  k_cycle_stplen_1,
+  k_cycle_re,
+  cycle_age
 ) {
   
   
@@ -49,6 +51,7 @@ scoringFunction <- function(
                   "ti (age, k = k_age, bs = bs) + ",
                   "ti (speed, k = k_speed, bs = bs) + ",
                   "ti(ht, k = k_ht, bs = bs) + ",
+                  "stplen + ",
                   "sex ")
   
   if(all(c(k_cycle_age_1, 
@@ -80,6 +83,9 @@ scoringFunction <- function(
            k_cycle_ht_2)>0))
     form <- paste0(form, 
                    "+ ti (cycle, ht, k = c(k_cycle_ht_1, k_cycle_ht_2), bs = bs)")
+  if(k_cycle_stplen_1>0)
+    form <- paste0(form, 
+                   "+ ti (cycle, by = stplen, k = k_cycle_stplen_1, bs = bs)")
   if(k_cycle_re>0)
     form <- paste0(form, 
                    "+ ti (cycle, k = k_cycle_re, by = study, bs = 're')")
@@ -114,17 +120,18 @@ bounds <- list(
   k_cycle = c(5L,25L), 
   k_age = c(5L,20L),
   k_speed = c(4L,7L),
-  k_cycle_age_1 = c(5L,25L),
-  k_cycle_age_2 = c(5L,20L),
-  k_cycle_speed_1 = c(5L,25L),
-  k_cycle_speed_2 = c(4L,7L),
-  k_age_speed_1 = c(5L,20L),
-  k_age_speed_2 = c(4L,7L),
-  k_cycle_age_speed_1 = c(5L,15L),
-  k_cycle_age_speed_2 = c(5L,10L),
-  k_cycle_age_speed_3 = c(4L,7L),
-  k_cycle_ht_1 = c(5L,25L),
-  k_cycle_ht_2 = c(5L,15L),
+  k_cycle_age_1 = c(0L,25L),
+  k_cycle_age_2 = c(0L,20L),
+  k_cycle_speed_1 = c(0L,25L),
+  k_cycle_speed_2 = c(0L,6L),
+  k_age_speed_1 = c(0L,20L),
+  k_age_speed_2 = c(0L,6L),
+  k_cycle_age_speed_1 = c(0L,15L),
+  k_cycle_age_speed_2 = c(0L,10L),
+  k_cycle_age_speed_3 = c(0L,6L),
+  k_cycle_ht_1 = c(0L,25L),
+  k_cycle_ht_2 = c(0L,15L),
+  k_cycle_stplen_1 = c(0L,15L),
   k_ht = c(5L,15L),
   k_cycle_re = c(5L,25L)
 )
