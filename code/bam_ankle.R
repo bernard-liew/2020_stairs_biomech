@@ -38,16 +38,16 @@ rm (ID)
 dat <- readRDS("output/df_clean_self.RDS")  %>%
   filter (joint == "ankle") %>% 
   filter(study != "lencioni") %>% # data reported dissimilar to others
-  mutate (speed_rd  = round (speed, 1)) %>%
-  group_by(subj, study, joint, cond, speed_rd, cycle, sex) %>%
-  summarize (val = mean (val),
-             speed = round(mean (speed),1),
-             strlen = round(mean (strlen),1),
-             stplen = round(mean (stplen),1),
-             age = age[1],
-             ht = round (ht[1],2),
-             wt = wt[1]) %>%
-  ungroup () %>%
+  # mutate (speed_rd  = round (speed, 1)) %>%
+  # group_by(subj, study, joint, cond, speed_rd, cycle, sex) %>%
+  # summarize (val = mean (val),
+  #            speed = round(mean (speed),1),
+  #            strlen = round(mean (strlen),1),
+  #            stplen = round(mean (stplen),1),
+  #            age = age[1],
+  #            ht = round (ht[1],2),
+  #            wt = wt[1]) %>%
+  # ungroup () %>%
   mutate(sex = factor(sex),
          study = factor (study),
          subj = factor (subj)) %>%

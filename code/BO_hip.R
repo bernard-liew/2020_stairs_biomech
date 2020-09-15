@@ -12,7 +12,7 @@ test <- data[[2]]
 test <- test %>% arrange(subj, cycle)
 # create true functional matrix
 # with 49 observations, 1 row = 1 subject
-trueMat <- test %>% spread(cycle, val) %>% select(`1`:`101`) %>% as.matrix()
+trueMat <- test %>% spread(cycle, val) %>% dplyr::select(`1`:`101`) %>% as.matrix()
 # does not look too good though (?)
 matplot(t(trueMat), type="l", col = 
           test %>% 
@@ -38,11 +38,15 @@ scoringFunction <- function(
   k_cycle_ht_1,
   k_cycle_ht_2,
   k_ht,
+  k_stplen,
   k_cycle_stplen_1,
+  k_cycle_stplen_2,
   k_cycle_re,
   cycle_age
 ) {
   
+  funargs <- as.list(match.call())[-1]
+  if(any(unlist(funargs)<3)) return(do.call("replaceScore", lapply(funargs, function(x) pmax(3,x))))
   
   bs <-  "cr"
   
@@ -51,7 +55,7 @@ scoringFunction <- function(
                   "ti (age, k = k_age, bs = bs) + ",
                   "ti (speed, k = k_speed, bs = bs) + ",
                   "ti(ht, k = k_ht, bs = bs) + ",
-                  "stplen + ",
+                  "ti(stplen, k = k_stplen, bs = bs) + ",
                   "sex ")
   
   if(all(c(k_cycle_age_1, 
@@ -83,9 +87,10 @@ scoringFunction <- function(
            k_cycle_ht_2)>0))
     form <- paste0(form, 
                    "+ ti (cycle, ht, k = c(k_cycle_ht_1, k_cycle_ht_2), bs = bs)")
-  if(k_cycle_stplen_1>0)
+  if(all(c(k_cycle_stplen_1, 
+           k_cycle_stplen_2)>0))
     form <- paste0(form, 
-                   "+ ti (cycle, by = stplen, k = k_cycle_stplen_1, bs = bs)")
+                   "+ ti (cycle, stplen, k = c(k_cycle_stplen_1, k_cycle_stplen_1), bs = bs)")
   if(k_cycle_re>0)
     form <- paste0(form, 
                    "+ ti (cycle, k = k_cycle_re, by = study, bs = 're')")
@@ -107,7 +112,7 @@ scoringFunction <- function(
   if(class(pr)=="try-error") score <- NA else{
     
     test$pr <- pr
-    predMat <- test %>% select(-val) %>% spread(cycle, pr) %>% select(`1`:`101`) %>% as.matrix()
+    predMat <- test %>% dplyr::select(-val) %>% spread(cycle, pr) %>% dplyr::select(`1`:`101`) %>% as.matrix()
     score <- -mean(relRMSE(trueMat, predMat), na.rm=T)
     
     
@@ -116,10 +121,12 @@ scoringFunction <- function(
   return(list(Score = score))
 }
 
+replaceScore <- scoringFunction
+
 bounds <- list( 
   k_cycle = c(5L,25L), 
   k_age = c(5L,20L),
-  k_speed = c(4L,7L),
+  k_speed = c(5L,20L),
   k_cycle_age_1 = c(0L,25L),
   k_cycle_age_2 = c(0L,20L),
   k_cycle_speed_1 = c(0L,25L),
@@ -132,7 +139,9 @@ bounds <- list(
   k_cycle_ht_1 = c(0L,25L),
   k_cycle_ht_2 = c(0L,15L),
   k_cycle_stplen_1 = c(0L,15L),
+  k_cycle_stplen_2 = c(0L,15L),
   k_ht = c(5L,15L),
+  k_stplen = c(5L, 20L),
   k_cycle_re = c(5L,25L)
 )
 
@@ -144,7 +153,7 @@ nrEpochs <- 5
 library(doParallel)
 cl <- makeCluster(nrClusters)
 registerDoParallel(cl)
-clusterExport(cl,c('train','test','trueMat','relRMSE', 'RMSE', 'integrate_fun'))
+clusterExport(cl,c('train','test','trueMat','relRMSE', 'RMSE', 'integrate_fun', 'replaceScore'))
 clusterEvalQ(cl,expr= {
   library(mgcv)
   library(tidyr)

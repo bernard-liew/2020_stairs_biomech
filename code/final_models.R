@@ -92,7 +92,7 @@ term.plot(mod_hip, what = "mu", ask = FALSE)
 term.plot(mod_hip, what = "sigma")
 dev.off()
 
-# ankle
+# knee
 mod_knee <- create_final_model(joint = "knee")
 pdf("output/plots_knee.pdf")
 plot(mod_knee)

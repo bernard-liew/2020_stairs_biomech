@@ -18,8 +18,8 @@ df_bo_ankle %>% gather(key = "parameter", value = "value",
   ggplot(aes(x = parameter, y = value, colour = Score)) + 
   geom_point(alpha = 0.3)
 
-df_bo_ankle %>% arrange(Score) %>% select(k_cycle:Score) %>%  head()
-# best score 0.1306451
+df_bo_ankle %>% arrange(Score) %>% dplyr::select(k_cycle:Score) %>%  head()
+# best score 0.1262929
 
 ##############################################################################
 ## hip
@@ -37,8 +37,8 @@ df_bo_hip %>% gather(key = "parameter", value = "value",
 
 # look at the top configs
 
-df_bo_hip %>% arrange(Score) %>% select(k_cycle:Score) %>% head()
-# best score 0.1787804
+df_bo_hip %>% arrange(Score) %>% dplyr::select(k_cycle:Score) %>% head()
+# best score 0.1939837
 
 ##############################################################################
 ## knee
@@ -58,5 +58,5 @@ df_bo_knee %>% gather(key = "parameter", value = "value",
 
 # look at the top configs
 
-df_bo_knee %>% arrange(Score) %>% select(k_cycle:Score) %>%  head()
-# best score 0.1525697
+df_bo_knee %>% arrange(Score) %>% dplyr::select(k_cycle:Score) %>%  head()
+# best score 0.1342409
