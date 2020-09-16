@@ -15,12 +15,17 @@ source("code/settings_to_formula.R")
 # per joint
 create_final_model <- function(joint = "ankle" , 
                                use_best_family = FALSE,
-                               defined_family = "NO")
+                               defined_family = "NO",
+                               data = NULL)
 {
   
   ############# read hold-out set ##############
-  data <- readRDS(paste0("output/", joint, "_splitted.RDS"))
-  this_data <<- data[[3]] # set global because gamlss does not find it otherwise
+  if(is.null(data)){
+    data <- readRDS(paste0("output/", joint, "_splitted.RDS"))
+    this_data <<- data[[3]] # set global because gamlss does not find it otherwise
+  }else{
+    this_data <<- data
+  }
   ##############################################
   
   ############# get best mu form ###############
@@ -72,31 +77,31 @@ create_final_model <- function(joint = "ankle" ,
                 trace = TRUE)
   ##############################################
   
-  return(mod)
+  return(list(mod,form))
   
 }
 
 # ankle
 mod_ankle <- create_final_model(joint = "ankle")
 pdf("output/plots_ankle.pdf")
-plot(mod_ankle)
-term.plot(mod_ankle, what = "mu", ask = FALSE)
-term.plot(mod_ankle, what = "sigma")
+plot(mod_ankle[[1]])
+term.plot(mod_ankle[[1]], what = "mu", ask = FALSE)
+term.plot(mod_ankle[[1]], what = "sigma")
 dev.off()
 
 # hip
 mod_hip <- create_final_model(joint = "hip")
 pdf("output/plots_hip.pdf")
-plot(mod_hip)
-term.plot(mod_hip, what = "mu", ask = FALSE)
-term.plot(mod_hip, what = "sigma")
+plot(mod_hip[[1]])
+term.plot(mod_hip[[1]], what = "mu", ask = FALSE)
+term.plot(mod_hip[[1]], what = "sigma")
 dev.off()
 
 # knee
 mod_knee <- create_final_model(joint = "knee")
 pdf("output/plots_knee.pdf")
-plot(mod_knee)
-term.plot(mod_knee, what = "mu", ask = FALSE)
-term.plot(mod_knee, what = "sigma")
+plot(mod_knee[[1]])
+term.plot(mod_knee[[1]], what = "mu", ask = FALSE)
+term.plot(mod_knee[[1]], what = "sigma")
 dev.off()
 
