@@ -13,6 +13,7 @@ output/df_horst.RDS
 output/df_taylor.RDS
 output/df_schreiber.RDS
 output/df_lencioni.RDS
+output/*.RData
 manuscript/*
 analysis/*html
 2020_stairs_biomech.Rproj

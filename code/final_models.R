@@ -105,3 +105,8 @@ term.plot(mod_knee[[1]], what = "mu", ask = FALSE)
 term.plot(mod_knee[[1]], what = "sigma")
 dev.off()
 
+
+save (mod_ankle,
+      mod_knee,
+      mod_hip,
+      file = "output/final_model.RData")
