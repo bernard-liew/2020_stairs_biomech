@@ -21,53 +21,55 @@ settings_to_formula <- function(
   cycle_age
   ) {
     
-
-    form <-  paste0("~ ",
-                    "ti (cycle, k = ", k_cycle, ", bs = 'cr') + ",
-                    "ti (age, k = ", k_age, ", bs = 'cr') + ",
-                    "ti (speed, k = ", k_speed, ", bs = 'cr') + ",
-                    "ti(ht, k = ",k_ht, ", bs = 'cr') + ",
-                    "ti(stplen, k = ", k_stplen, ", bs = 'cr') + ",
-                    "sex ")
-    
-    if(all(c(k_cycle_age_1, 
-             k_cycle_age_2)>0))
-      form <- paste0(form, 
-                     "+ ti (cycle, age, k = c(",k_cycle_age_1,",", k_cycle_age_2, "), bs = 'cr')")
-    if(all(c(k_cycle_speed_1, 
-             k_cycle_speed_2)>0))
-      form <- paste0(form, 
-                     "+ ti (cycle, speed, k = c(",k_cycle_speed_1,",", k_cycle_speed_2, "),  bs = 'cr')")
-    if(all(c(k_age_speed_1, 
-             k_age_speed_2)>0))
-      form <- paste0(form, 
-                     "+ ti (age, speed,  k = c(",k_age_speed_1,",", k_age_speed_2, "),  bs = 'cr')")
-    if(all(c(
-      k_cycle_age_1, 
-      k_cycle_age_2,
-      k_cycle_speed_1, 
-      k_cycle_speed_2,
-      k_age_speed_1, 
-      k_age_speed_2,
-      k_cycle_age_speed_1, 
-      k_cycle_age_speed_2,
-      k_cycle_age_speed_3)>0))
-      form <- paste0(form, 
-                     "+ ti (cycle, speed, age,  k = c(",k_cycle_age_speed_1,",", k_cycle_age_speed_2,",",
-                     k_cycle_age_speed_3,"), bs = 'cr')"
-      )
-    if(all(c(k_cycle_ht_1, 
-             k_cycle_ht_2)>0))
-      form <- paste0(form, 
-                     "+ ti (cycle, ht, k = c(",k_cycle_ht_1,",", k_cycle_ht_2,"), bs = 'cr')")
-    if(all(c(k_cycle_stplen_1, 
-             k_cycle_stplen_2)>0))
-      form <- paste0(form, 
-                     "+ ti (cycle, stplen, k = c(",k_cycle_stplen_1,",", k_cycle_stplen_1,"), bs = 'cr')")
-    if(k_cycle_re>0)
-      form <- paste0(form, 
-                     "+ ti (cycle, k = ", k_cycle_re,", by = study, bs = 're')")
-    
-    return(form)
+  funargs <- as.list(match.call())[-1]
+  if(any(unlist(funargs)<3)) return(do.call("settings_to_formula", lapply(funargs, function(x) pmax(3,x))))
+  
+  form <-  paste0("~ ",
+                  "ti (cycle, k = ", k_cycle, ", bs = 'cr') + ",
+                  "ti (age, k = ", k_age, ", bs = 'cr') + ",
+                  "ti (speed, k = ", k_speed, ", bs = 'cr') + ",
+                  "ti(ht, k = ",k_ht, ", bs = 'cr') + ",
+                  "ti(stplen, k = ", k_stplen, ", bs = 'cr') + ",
+                  "sex ")
+  
+  if(all(c(k_cycle_age_1, 
+           k_cycle_age_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, age, k = c(",k_cycle_age_1,",", k_cycle_age_2, "), bs = 'cr')")
+  if(all(c(k_cycle_speed_1, 
+           k_cycle_speed_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, speed, k = c(",k_cycle_speed_1,",", k_cycle_speed_2, "),  bs = 'cr')")
+  if(all(c(k_age_speed_1, 
+           k_age_speed_2)>0))
+    form <- paste0(form, 
+                   "+ ti (age, speed,  k = c(",k_age_speed_1,",", k_age_speed_2, "),  bs = 'cr')")
+  if(all(c(
+    k_cycle_age_1, 
+    k_cycle_age_2,
+    k_cycle_speed_1, 
+    k_cycle_speed_2,
+    k_age_speed_1, 
+    k_age_speed_2,
+    k_cycle_age_speed_1, 
+    k_cycle_age_speed_2,
+    k_cycle_age_speed_3)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, speed, age,  k = c(",k_cycle_age_speed_1,",", k_cycle_age_speed_2,",",
+                   k_cycle_age_speed_3,"), bs = 'cr')"
+    )
+  if(all(c(k_cycle_ht_1, 
+           k_cycle_ht_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, ht, k = c(",k_cycle_ht_1,",", k_cycle_ht_2,"), bs = 'cr')")
+  if(all(c(k_cycle_stplen_1, 
+           k_cycle_stplen_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, stplen, k = c(",k_cycle_stplen_1,",", k_cycle_stplen_1,"), bs = 'cr')")
+  if(k_cycle_re>0)
+    form <- paste0(form, 
+                   "+ ti (cycle, k = ", k_cycle_re,", by = study, bs = 're')")
+  
+  return(form)
   
 }
