@@ -123,7 +123,7 @@ k2_plot <- ggplot (k2) +
                ti(ht, k = 6, bs = 'cr') + 
                ti(stplen, k = 12, bs = 'cr') + 
                sex + 
-               ti (age, speed,  k = c(9,1),  bs = 'cr')+ 
+               ti (age, speed,  k = c(9,3),  bs = 'cr')+ 
                s ( study, bs = 're') + 
                s(subj, bs = 're')
  
