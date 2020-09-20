@@ -16,7 +16,8 @@ source("code/settings_to_formula.R")
 create_final_model <- function(joint = "ankle" , 
                                use_best_family = FALSE,
                                defined_family = "NO",
-                               data = NULL)
+                               data = NULL, 
+                               withRE = FALSE)
 {
   
   ############# read hold-out set ##############
@@ -41,7 +42,14 @@ create_final_model <- function(joint = "ankle" ,
     dplyr::select(k_cycle:k_cycle_re) %>% 
     head(1) %>% c()
   form <- do.call(settings_to_formula, best_setting)
-  form <- paste0("val ~ ba(", form, " + s(subj, bs = 're'))")
+  if(withRE=="subj"){ 
+    form <- paste0("val ~ ba(", form, " + s(subj, bs = 're'))") 
+  }else if(withRE=="study") 
+  {
+    form <- paste0("val ~ ba(", form, " + s(study, bs = 're'))") 
+  }else{
+    form <- paste0("val ~ ba(", form, ")")
+  }
   ##############################################
   
   ############# get best family ################
