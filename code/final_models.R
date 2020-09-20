@@ -89,8 +89,19 @@ create_final_model <- function(joint = "ankle" ,
   
 }
 
+# load original data
+dat <- readRDS("output/df_clean_allspeed.RDS") %>%
+  filter (cond %in% c("walkt05", "self", "c4")) %>% 
+  group_by(subj, speed, age, sex, ht, wt, study)%>% 
+  ungroup () %>%
+  mutate(sex = as.factor(sex),
+         subj = as.factor(subj),
+         study = as.factor(study)) %>%
+  as.data.frame() %>%
+  arrange (study, subj, joint, cond, speed, cycle)  
+
 # ankle
-mod_ankle <- create_final_model(joint = "ankle")
+mod_ankle <- create_final_model(joint = "ankle", data = dat)
 pdf("output/plots_ankle.pdf")
 plot(mod_ankle[[1]])
 term.plot(mod_ankle[[1]], what = "mu", ask = FALSE)
@@ -98,7 +109,7 @@ term.plot(mod_ankle[[1]], what = "sigma")
 dev.off()
 
 # hip
-mod_hip <- create_final_model(joint = "hip")
+mod_hip <- create_final_model(joint = "hip", data = dat)
 pdf("output/plots_hip.pdf")
 plot(mod_hip[[1]])
 term.plot(mod_hip[[1]], what = "mu", ask = FALSE)
@@ -106,7 +117,7 @@ term.plot(mod_hip[[1]], what = "sigma")
 dev.off()
 
 # knee
-mod_knee <- create_final_model(joint = "knee")
+mod_knee <- create_final_model(joint = "knee", data = dat)
 pdf("output/plots_knee.pdf")
 plot(mod_knee[[1]])
 term.plot(mod_knee[[1]], what = "mu", ask = FALSE)
