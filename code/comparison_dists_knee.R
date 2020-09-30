@@ -20,7 +20,7 @@ fams <- c(
 
 ## knee
 data <- readRDS("output/knee_splitted.RDS")
-train <- data[[1]]
+train <- do.call("rbind", data[c(1,3)])
 test <- data[[2]]
 test <- test %>% arrange(subj, cycle)
 trueMat <- test %>% spread(cycle, val) %>% dplyr::select(`1`:`101`) %>% as.matrix()
@@ -68,32 +68,32 @@ saveRDS(res, "output/dist_comparison_knee.RDS")
 data.frame(family = fams, score = as.numeric(unlist(res))) %>% arrange(score)
 
 # family     score
-# 1       NO 0.1364879
-# 2       LO 0.1373469
-# 3       GT 0.1378533
-# 4      NET 0.1378995
-# 5       TF 0.1380209
-# 6      TF2 0.1380227
-# 7       PE 0.1387909
-# 8      ST4 0.1388501
-# 9      PE2 0.1390169
-# 10   SHASH 0.1400204
-# 11    SEP4 0.1407437
-# 12     JSU 0.1408233
-# 13     SST 0.1408523
-# 14 SHASHo2 0.1422784
-# 15  SHASHo 0.1422786
-# 16     SN2 0.1456457
-# 17    SEP3 0.1463297
-# 18     ST3 0.1476345
-# 19      GU 0.1539753
-# 20      RG 0.1567152
-# 21    EGB2 0.1589891
-# 22    SEP2 0.1623936
-# 23     ST1 0.1691913
-# 24    SEP1 0.1693511
-# 25     ST2 0.1696349
-# 26    JSUo 0.1749583
-# 27     ST5 0.1783186
-# 28     SN1 0.1854085
+# 1       NO 0.1304466
+# 2       PE 0.1304797
+# 3       LO 0.1305075
+# 4      PE2 0.1306196
+# 5       GT 0.1307822
+# 6       TF 0.1307914
+# 7      TF2 0.1307916
+# 8      NET 0.1309095
+# 9      ST4 0.1311887
+# 10    SEP4 0.1314425
+# 11   SHASH 0.1315143
+# 12     JSU 0.1317395
+# 13     SST 0.1319233
+# 14 SHASHo2 0.1323908
+# 15  SHASHo 0.1323947
+# 16    SEP3 0.1339485
+# 17     SN2 0.1343594
+# 18     ST3 0.1351703
+# 19    EGB2 0.1375302
+# 20     ST1 0.1381005
+# 21    SEP1 0.1396180
+# 22     ST5 0.1426728
+# 23    SEP2 0.1435549
+# 24    JSUo 0.1455936
+# 25      RG 0.1465310
+# 26      GU 0.1478137
+# 27     ST2 0.1506922
+# 28     SN1 0.1684039
 # 29  exGAUS        NA

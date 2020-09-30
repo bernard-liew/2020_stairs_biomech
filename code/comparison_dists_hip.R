@@ -20,7 +20,7 @@ fams <- c(
 
 ## hip
 data <- readRDS("output/hip_splitted.RDS")
-train <- data[[1]]
+train <- do.call("rbind", data[c(1,3)])
 test <- data[[2]]
 test <- test %>% arrange(subj, cycle)
 trueMat <- test %>% spread(cycle, val) %>% dplyr::select(`1`:`101`) %>% as.matrix()

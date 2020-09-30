@@ -21,8 +21,29 @@ settings_to_formula <- function(
   cycle_age
   ) {
     
-  funargs <- as.list(match.call())[-1]
-  if(any(unlist(funargs)<3)) return(do.call("settings_to_formula", lapply(funargs, function(x) pmax(3,x))))
+  # funargs <- as.list(match.call())[-1]
+  # if(any(unlist(funargs)<3 & unlist(funargs)>0)) 
+  #   return(do.call("settings_to_formula", lapply(funargs, function(x) pmax(3,x))))
+  
+  k_cycle <- roundBelow3(k_cycle)
+  k_age <- roundBelow3(k_age)
+  k_speed <- roundBelow3(k_speed)
+  k_cycle_age_1 <- roundBelow3(k_cycle_age_1)
+  k_cycle_age_2 <- roundBelow3(k_cycle_age_2)
+  k_cycle_speed_1 <- roundBelow3(k_cycle_speed_1)
+  k_cycle_speed_2 <- roundBelow3(k_cycle_speed_2)
+  k_age_speed_1 <- roundBelow3(k_age_speed_1)
+  k_age_speed_2 <- roundBelow3(k_age_speed_2)
+  k_cycle_age_speed_1 <- roundBelow3(k_cycle_age_speed_1)
+  k_cycle_age_speed_2 <- roundBelow3(k_cycle_age_speed_2)
+  k_cycle_age_speed_3 <- roundBelow3(k_cycle_age_speed_3)
+  k_cycle_ht_1 <- roundBelow3(k_cycle_ht_1)
+  k_cycle_ht_2 <- roundBelow3(k_cycle_ht_2)
+  k_ht <- roundBelow3(k_ht)
+  k_stplen <- roundBelow3(k_stplen)
+  k_cycle_stplen_1 <- roundBelow3(k_cycle_stplen_1)
+  k_cycle_stplen_2 <- roundBelow3(k_cycle_stplen_2)
+  k_cycle_re <- roundBelow3(k_cycle_re)
   
   form <-  paste0("~ ",
                   "ti (cycle, k = ", k_cycle, ", bs = 'cr') + ",
@@ -73,3 +94,5 @@ settings_to_formula <- function(
   return(form)
   
 }
+
+roundBelow3 <- function(x) ifelse(x<3,0,x)
