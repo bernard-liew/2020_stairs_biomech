@@ -23,7 +23,7 @@ create_final_model <- function(joint = "ankle" ,
   ############# read hold-out set ##############
   if(is.null(data)){
     data <- readRDS(paste0("output/", joint, "_splitted.RDS"))
-    this_data <<- do.call("rbind", data[c(1,3)]) # set global because gamlss does not find it otherwise
+    this_data <<- do.call("rbind", data) # set global because gamlss does not find it otherwise
   }else{
     this_data <<- data
   }
@@ -104,31 +104,31 @@ dat <- readRDS("output/df_clean_allspeed.RDS") %>%
 mod_ankle <- create_final_model(joint = "ankle", data = dat %>% filter(joint=="ankle") %>% 
   filter(cycle < 70 & cycle > 20))
 pdf("output/plots_ankle.pdf")
-old.par <- par()
-plot(mod_ankle[[1]])
-par(old.par)
+# old.par <- par()
+# par(old.par)
 term.plot(mod_ankle[[1]], what = "mu", ask = FALSE)
 term.plot(mod_ankle[[1]], what = "sigma")
+try(plot(mod_ankle[[1]]))
 dev.off()
 
 # hip
 mod_hip <- create_final_model(joint = "hip", data = dat %>% filter(joint=="hip"))
 pdf("output/plots_hip.pdf")
-old.par <- par()
-plot(mod_hip[[1]])
-par(old.par)
+# old.par <- par()
+# par(old.par)
 term.plot(mod_hip[[1]], what = "mu", ask = FALSE)
 term.plot(mod_hip[[1]], what = "sigma")
+plot(mod_hip[[1]])
 dev.off()
 
 # knee
 mod_knee <- create_final_model(joint = "knee", data = dat %>% filter(joint=="knee"))
 pdf("output/plots_knee.pdf")
-old.par <- par()
-plot(mod_knee[[1]])
-par(old.par)
+# old.par <- par()
+# par(old.par)
 term.plot(mod_knee[[1]], what = "mu", ask = FALSE)
 term.plot(mod_knee[[1]], what = "sigma")
+plot(mod_knee[[1]])
 dev.off()
 
 
