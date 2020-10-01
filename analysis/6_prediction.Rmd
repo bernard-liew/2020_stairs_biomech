@@ -152,7 +152,7 @@ smo <- getSmo(mod_ankle[[1]])
 
 speed <- c(1, 1.5)
 age <- seq (20, 80, 10)
-cycle <- 1:101
+cycle <- 20:70
 
 pp_ank <- get_predictions(smo, 
                       cond = list(age = age, speed = speed, cycle = cycle),
