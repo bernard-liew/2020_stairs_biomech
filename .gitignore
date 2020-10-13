@@ -16,4 +16,3 @@ output/df_lencioni.RDS
 output/*.RData
 manuscript/*
 analysis/*html
-2020_stairs_biomech.Rproj
