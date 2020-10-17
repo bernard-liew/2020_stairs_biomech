@@ -39,9 +39,9 @@ scoringFunction <- function(
   k_cycle_ht_1,
   k_cycle_ht_2,
   k_ht,
-  k_stplen,
-  k_cycle_stplen_1,
-  k_cycle_stplen_2,
+  k_strlen,
+  k_cycle_strlen_1,
+  k_cycle_strlen_2,
   k_cycle_re,
   cycle_age
 ) {
@@ -65,9 +65,9 @@ scoringFunction <- function(
   k_cycle_ht_1 <- roundBelow3(k_cycle_ht_1)
   k_cycle_ht_2 <- roundBelow3(k_cycle_ht_2)
   k_ht <- roundBelow3(k_ht)
-  k_stplen <- roundBelow3(k_stplen)
-  k_cycle_stplen_1 <- roundBelow3(k_cycle_stplen_1)
-  k_cycle_stplen_2 <- roundBelow3(k_cycle_stplen_2)
+  k_strlen <- roundBelow3(k_strlen)
+  k_cycle_strlen_1 <- roundBelow3(k_cycle_strlen_1)
+  k_cycle_strlen_2 <- roundBelow3(k_cycle_strlen_2)
   k_cycle_re <- roundBelow3(k_cycle_re)
   
   bs <-  "cr"
@@ -77,7 +77,7 @@ scoringFunction <- function(
                   "ti (age, k = k_age, bs = bs) + ",
                   "ti (speed, k = k_speed, bs = bs) + ",
                   "ti(ht, k = k_ht, bs = bs) + ",
-                  "ti(stplen, k = k_stplen, bs = bs) + ",
+                  "ti(strlen, k = k_strlen, bs = bs) + ",
                   "sex ")
   
   if(all(c(k_cycle_age_1, 
@@ -110,10 +110,10 @@ scoringFunction <- function(
            k_cycle_ht_2)>0))
     form <- paste0(form, 
                    "+ ti (cycle, ht, k = c(k_cycle_ht_1, k_cycle_ht_2), bs = bs)")
-  if(all(c(k_cycle_stplen_1, 
-           k_cycle_stplen_2)>0))
+  if(all(c(k_cycle_strlen_1, 
+           k_cycle_strlen_2)>0))
     form <- paste0(form, 
-                   "+ ti (cycle, stplen, k = c(k_cycle_stplen_1, k_cycle_stplen_1), bs = bs)")
+                   "+ ti (cycle, strlen, k = c(k_cycle_strlen_1, k_cycle_strlen_1), bs = bs)")
   if(k_cycle_re>0)
     form <- paste0(form, 
                    "+ ti (cycle, k = k_cycle_re, by = study, bs = 're')")
@@ -162,10 +162,10 @@ bounds <- list(
   k_cycle_age_speed_3 = c(0L,6L),
   k_cycle_ht_1 = c(0L,25L),
   k_cycle_ht_2 = c(0L,15L),
-  k_cycle_stplen_1 = c(0L,15L),
-  k_cycle_stplen_2 = c(0L,15L),
+  k_cycle_strlen_1 = c(0L,15L),
+  k_cycle_strlen_2 = c(0L,15L),
   k_ht = c(5L,15L),
-  k_stplen = c(5L, 20L),
+  k_strlen = c(5L, 20L),
   k_cycle_re = c(5L,25L)
 )
 

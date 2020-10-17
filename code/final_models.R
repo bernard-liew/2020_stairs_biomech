@@ -17,7 +17,7 @@ create_final_model <- function(joint = "ankle" ,
                                use_best_family = FALSE,
                                defined_family = "NO",
                                data = NULL, 
-                               withRE = FALSE)
+                               withRE = TRUE)
 {
   
   ############# read hold-out set ##############

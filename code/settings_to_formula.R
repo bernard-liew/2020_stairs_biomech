@@ -14,9 +14,9 @@ settings_to_formula <- function(
   k_cycle_ht_1,
   k_cycle_ht_2,
   k_ht,
-  k_stplen,
-  k_cycle_stplen_1,
-  k_cycle_stplen_2,
+  k_strlen,
+  k_cycle_strlen_1,
+  k_cycle_strlen_2,
   k_cycle_re,
   cycle_age
   ) {
@@ -40,9 +40,9 @@ settings_to_formula <- function(
   k_cycle_ht_1 <- roundBelow3(k_cycle_ht_1)
   k_cycle_ht_2 <- roundBelow3(k_cycle_ht_2)
   k_ht <- roundBelow3(k_ht)
-  k_stplen <- roundBelow3(k_stplen)
-  k_cycle_stplen_1 <- roundBelow3(k_cycle_stplen_1)
-  k_cycle_stplen_2 <- roundBelow3(k_cycle_stplen_2)
+  k_strlen <- roundBelow3(k_strlen)
+  k_cycle_strlen_1 <- roundBelow3(k_cycle_strlen_1)
+  k_cycle_strlen_2 <- roundBelow3(k_cycle_strlen_2)
   k_cycle_re <- roundBelow3(k_cycle_re)
   
   form <-  paste0("~ ",
@@ -50,7 +50,7 @@ settings_to_formula <- function(
                   "ti (age, k = ", k_age, ", bs = 'cr') + ",
                   "ti (speed, k = ", k_speed, ", bs = 'cr') + ",
                   "ti(ht, k = ",k_ht, ", bs = 'cr') + ",
-                  "ti(stplen, k = ", k_stplen, ", bs = 'cr') + ",
+                  "ti(strlen, k = ", k_strlen, ", bs = 'cr') + ",
                   "sex ")
   
   if(all(c(k_cycle_age_1, 
@@ -83,10 +83,10 @@ settings_to_formula <- function(
            k_cycle_ht_2)>0))
     form <- paste0(form, 
                    "+ ti (cycle, ht, k = c(",k_cycle_ht_1,",", k_cycle_ht_2,"), bs = 'cr')")
-  if(all(c(k_cycle_stplen_1, 
-           k_cycle_stplen_2)>0))
+  if(all(c(k_cycle_strlen_1, 
+           k_cycle_strlen_2)>0))
     form <- paste0(form, 
-                   "+ ti (cycle, stplen, k = c(",k_cycle_stplen_1,",", k_cycle_stplen_1,"), bs = 'cr')")
+                   "+ ti (cycle, strlen, k = c(",k_cycle_strlen_1,",", k_cycle_strlen_1,"), bs = 'cr')")
   if(k_cycle_re>0)
     form <- paste0(form, 
                    "+ ti (cycle, k = ", k_cycle_re,", by = study, bs = 're')")
