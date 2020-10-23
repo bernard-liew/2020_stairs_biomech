@@ -38,15 +38,15 @@ library (rainbow)
 load ("output/final_model.RData")
 
 # Original data
-dat <- readRDS("output/df_clean_allspeed.RDS") %>%
-  filter (cond %in% c("walkt05", "self", "c4")) %>% 
-  group_by(subj, speed, age, sex, ht, wt, study)%>% 
+dat <- readRDS("output/df_clean_self.RDS") %>%
+  filter (study != "lencioni") %>%
+  group_by(subj, speed, age, sex, ht, wt, study)%>%
   ungroup () %>%
-  mutate(sex = as.factor(sex),
-         subj = as.factor(subj),
-         study = as.factor(study)) %>%
+  mutate(sex = factor(sex),
+         subj = factor(subj),
+         study = factor(study)) %>%
   as.data.frame() %>%
-  arrange (study, subj, joint, cond, speed, cycle)  
+  arrange (study, subj, joint, cond, speed, cycle) 
 
 ```
 
@@ -143,6 +143,17 @@ dev.off()
 
 # Prediction inference
 
+Set predictor values
+
+```{r}
+
+speed <- c(1, 1.5)
+age <- seq (20, 80, 10)
+strlen <- c(1.5)
+
+```
+
+
 ## Waveform predictions
 
 ### Ankle
@@ -150,20 +161,16 @@ dev.off()
 ```{r}
 smo <- getSmo(mod_ankle[[1]])
 
-speed <- c(1, 1.5)
-age <- seq (20, 80, 10)
 cycle <- 20:70
 
 pp_ank <- get_predictions(smo, 
-                      cond = list(age = age, speed = speed, cycle = cycle),
+                      cond = list(age = age, speed = speed, cycle = cycle, strlen = strlen),
                       rm.ranef = TRUE,
                       se = TRUE) %>%
   mutate (age = factor (age),
           speed = factor (speed))
 
-pdf (width = 8, height = 5, file = "manuscript/fig1.pdf")
-
-ggplot (pp_ank) +
+ank_plot <- ggplot (pp_ank) +
   geom_line (aes (x = cycle, y = fit, colour = age)) +
   scale_colour_manual(values = cbp2) +
   facet_wrap (~ speed, ncol = 2, scales = "fixed") + 
@@ -172,7 +179,9 @@ ggplot (pp_ank) +
         colour = "Age (yo)") +
   guides (fill = FALSE) +
   theme_cowplot()
-  
+
+pdf (width = 8, height = 5, file = "manuscript/fig1.pdf")
+ank_plot
 dev.off()
 
 
@@ -184,20 +193,16 @@ dev.off()
 
 smo <- getSmo(mod_knee[[1]])
 
-speed <- c(1, 1.5)
-age <- seq (20, 80, 10)
 cycle <- 1:101
 
 pp_kne <- get_predictions(smo, 
-                      cond = list(age = age, speed = speed, cycle = cycle),
+                      cond = list(age = age, speed = speed, cycle = cycle, strlen = strlen),
                       rm.ranef = TRUE,
                       se = TRUE) %>%
   mutate (age = factor (age),
           speed = factor (speed))
 
-pdf (width = 8, height = 5, file = "manuscript/fig2.pdf")
-
-ggplot (pp_kne) +
+kne_plot <- ggplot (pp_kne) +
   geom_line (aes (x = cycle, y = fit, colour = age)) +
   scale_colour_manual(values = cbp2) +
   facet_wrap (~ speed, ncol = 2, scales = "fixed") + 
@@ -206,7 +211,9 @@ ggplot (pp_kne) +
         colour = "Age (yo)") +
   guides (fill = FALSE) +
   theme_cowplot()
-  
+
+pdf (width = 8, height = 5, file = "manuscript/fig2.pdf")
+kne_plot
 dev.off()
 ```
 
@@ -215,31 +222,67 @@ dev.off()
 ```{r}
 smo <- getSmo(mod_hip[[1]])
 
-speed <- c(1, 1.5)
-age <- seq (20, 80, 10)
 cycle <- 1:101
 
 pp_hip <- get_predictions(smo, 
-                      cond = list(age = age, speed = speed, cycle = cycle),
+                      cond = list(age = age, speed = speed, cycle = cycle, strlen = strlen),
                       rm.ranef = TRUE,
                       se = TRUE) %>%
   mutate (age = factor (age),
           speed = factor (speed))
 
-pdf (width = 8, height = 5, file = "manuscript/fig3.pdf")
-
-ggplot (pp_hip) +
+hip_plot <- ggplot (pp_hip) +
   geom_line (aes (x = cycle, y = fit, colour = age)) +
   scale_colour_manual(values = cbp2) +
-  facet_wrap (~ speed, ncol = 2, scales = "fixed") + 
+  facet_wrap ( ~ speed, ncol = 2, scales = "fixed") + 
   labs (x = "% Stride",
         y = "Power (W/kg)",
         colour = "Age (yo)") +
   guides (fill = FALSE) +
   theme_cowplot()
-  
+
+pdf (width = 8, height = 5, file = "manuscript/fig3.pdf")
+hip_plot
 dev.off()
 ```
+
+### Plot all joints waveform
+
+```{r}
+ pcol <- plot_grid (ank_plot + 
+              theme(
+                axis.text.x = element_blank(),
+                axis.title.x = element_blank()) + 
+                  theme(legend.position="none"),
+            kne_plot +
+              theme(
+                axis.text.x = element_blank(),
+                axis.title.x = element_blank()) + 
+                  theme(legend.position="none"),
+            hip_plot + 
+                  theme(legend.position="none"),
+            nrow = 3,
+            ncol = 1,
+            vjust = 1.5,
+            hjust = 0,
+            labels = "auto")
+
+# extract the legend from one of the plots
+legend <- get_legend(
+  # create some space to the left of the legend
+  ank_plot + theme(legend.box.margin = margin(0, 0, 0, 12))
+)
+
+
+pdf (width = 8, height = 5, file = "manuscript/fig4.pdf")
+
+# add the legend to the row we made earlier. Give it one-third of 
+# the width of one plot (via rel_widths).
+plot_grid(pcol, legend, rel_widths = c(3, .4))
+
+dev.off()
+```
+
 
 ## Peaks inference
 
@@ -248,14 +291,14 @@ dev.off()
 ```{r}
 
 a2 <-pp_ank %>%
-  group_by(age, speed) %>%
+  group_by(age, speed, strlen) %>%
   filter (fit == max (fit))
 
 a2_plot <- ggplot (a2) +
   geom_point(aes (x = age, y = fit, group = 1)) +
   geom_line (aes (x = age, y = fit, group = 1)) + 
   geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
-  facet_wrap (~ speed, ncol = 2, scales = "fixed") + 
+  facet_wrap (strlen ~ speed, ncol = 2, scales = "fixed") + 
   labs (x = "Age (yo)",
         y = "Power (W/kg)") +
   theme_cowplot()
@@ -268,14 +311,14 @@ a2_plot <- ggplot (a2) +
 
 k2 <-pp_kne %>%
   filter (cycle > 10 & cycle < 40) %>%
-  group_by(age, speed) %>%
+  group_by(age, speed, strlen) %>%
   filter (fit == max (fit))
 
 k2_plot <- ggplot (k2) +
   geom_point(aes (x = age, y = fit, group = 1)) +
   geom_line (aes (x = age, y = fit, group = 1)) + 
   geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
-  facet_wrap (~ speed, ncol = 2, scales = "fixed") + 
+  facet_wrap (strlen ~ speed, ncol = 2, scales = "fixed") + 
   labs (x = "Age (yo)",
         y = "Power (W/kg)") +
   theme_cowplot()
@@ -288,14 +331,14 @@ k2_plot <- ggplot (k2) +
 # H1
 h1 <-pp_hip %>%
   filter (cycle > 5 & cycle < 40) %>%
-  group_by(age, speed) %>%
+  group_by(age, speed, strlen) %>%
   filter (fit == max (fit))
 
 h1_plot <- ggplot (h1) +
   geom_point(aes (x = age, y = fit, group = 1)) +
   geom_line (aes (x = age, y = fit, group = 1)) + 
   geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
-  facet_wrap (~ speed, ncol = 2, scales = "fixed") + 
+  facet_wrap (strlen ~ speed, ncol = 2, scales = "fixed") + 
   labs (x = "Age (yo)",
         y = "Power (W/kg)") +
   theme_cowplot()
@@ -303,14 +346,14 @@ h1_plot <- ggplot (h1) +
 # H3
 h3 <-pp_hip %>%
   filter (cycle > 55 & cycle < 80) %>%
-  group_by(age, speed) %>%
+  group_by(age, speed, strlen) %>%
   filter (fit == max (fit))
 
 h3_plot <- ggplot (h3) +
   geom_point(aes (x = age, y = fit, group = 1)) +
   geom_line (aes (x = age, y = fit, group = 1)) + 
   geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
-  facet_wrap (~ speed, ncol = 2, scales = "fixed") + 
+  facet_wrap (strlen ~ speed, ncol = 2, scales = "fixed") + 
   labs (x = "Age (yo)",
         y = "Power (W/kg)") +
   theme_cowplot()
@@ -320,7 +363,7 @@ h3_plot <- ggplot (h3) +
 
 ```{r}
 
-pdf (width = 8, height = 5, file = "manuscript/fig4.pdf")
+pdf (width = 8, height = 5, file = "manuscript/fig5.pdf")
 
  plot_grid (a2_plot + 
               theme(
