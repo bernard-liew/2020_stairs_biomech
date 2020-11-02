@@ -141,6 +141,83 @@ dev.off()
 ```
 
 
+# Smooth plots
+
+## Ankle
+
+### Smooth effect of age
+
+```{r}
+plot (getSmo(mod_ankle[[1]]), 
+      select = 2, 
+      ylab = "Power (W/kg)", 
+      xlab = "Age (years)",
+      ylim = c(-0.10, 0.10), 
+      shade = TRUE)
+```
+
+### Smooth effect of speed
+
+```{r}
+plot (getSmo(mod_ankle[[1]]), 
+      select = 3, 
+      ylab = "Power (W/kg)", 
+      xlab = "Speed (m/s)",
+      ylim = c(-0.5, 0.5), 
+      shade = TRUE)
+
+```
+
+## Knee
+
+### Smooth effect of age
+
+```{r}
+plot (getSmo(mod_knee[[1]]), 
+      select = 2, 
+      ylab = "Power (W/kg)", 
+      xlab = "Age (years)",
+      ylim = c(-0.20, 0.10), 
+      shade = TRUE)
+```
+
+### Smooth effect of speed
+
+```{r}
+plot (getSmo(mod_knee[[1]]), 
+      select = 3, 
+      ylab = "Power (W/kg)", 
+      xlab = "Speed (m/s)",
+      ylim = c(-0.05, 0.05), 
+      shade = TRUE)
+
+```
+
+## Hip
+
+### Smooth effect of age
+
+```{r}
+plot (getSmo(mod_hip[[1]]), 
+      select = 2, 
+      ylab = "Power (W/kg)", 
+      xlab = "Age (years)",
+      ylim = c(-0.25, 0.10), 
+      shade = TRUE)
+```
+
+### Smooth effect of speed
+
+```{r}
+plot (getSmo(mod_hip[[1]]), 
+      select = 3, 
+      ylab = "Power (W/kg)", 
+      xlab = "Speed (m/s)",
+      ylim = c(-0.4, 0.2), 
+      shade = TRUE)
+
+```
+
 # Prediction inference
 
 Set predictor values
