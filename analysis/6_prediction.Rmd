@@ -13,6 +13,7 @@ rm (list = ls())
 
 # Helper
 library (tidyverse)
+library (qwraps2)
 
 # modelling
 library (gamlss)
@@ -28,7 +29,7 @@ library (cowplot)
 library (ggforce)
 library (rainbow)
 
-
+source ("code/measures_johnson.R")
 ```
 
 # Import data
@@ -49,6 +50,68 @@ dat <- readRDS("output/df_clean_self.RDS") %>%
   arrange (study, subj, joint, cond, speed, cycle) 
 
 ```
+
+# Descriptive statistics
+
+```{r}
+
+subj_per_jt <- dat %>%
+  group_by(joint, study) %>%
+  distinct (subj) %>%
+  tally() %T>%
+  print ()
+
+dat_sub <- dat %>%
+  filter (cycle == 1) %>%
+  dplyr::select (-cond) %>%
+  group_by(subj, study, age, sex, ht, wt) %>%   
+  summarise_if(is.numeric, mean)
+
+
+our_summary1 <-
+  list("Age (years)" =
+       list("mean (sd)" = ~ qwraps2::mean_sd(age, denote_sd = "paren")),
+       "Height (m)" =
+       list("mean (sd)" = ~ qwraps2::mean_sd(ht, denote_sd = "paren")),
+        "Mass (kg)" =
+       list("mean (sd)" = ~ qwraps2::mean_sd(wt, denote_sd = "paren")),
+       "Sex" =
+       list("Female" = ~ qwraps2::n_perc0(sex == "f"),
+            "Male"  = ~ qwraps2::n_perc0(sex == "m")),
+       "Speed (m/s)" = 
+       list("mean (sd)" = ~ qwraps2::mean_sd(speed, denote_sd = "paren")),
+       "Stride length (m)" = 
+       list("mean (sd)" = ~ qwraps2::mean_sd(strlen, denote_sd = "paren")))
+
+by_cyl <- summary_table(group_by(dat_sub, study), our_summary1) %>%
+  as.data.frame() 
+
+by_cyl$Variables <-  c("Age (years)",
+                     "Height (m)",
+                      "Mass (kg)",
+                      "Sex-F",
+                      "Sex-M",
+                      "Speed (m/s)",
+                      "Stride length (m)")
+
+by_cyl <- dplyr::select (by_cyl, Variables, everything ())
+
+my_path <- paste0("manuscript/table_", 
+                  "summary",
+                  ".docx")
+
+ft <- flextable(by_cyl ) %>%
+  autofit()
+
+my_doc <- read_docx()  %>% 
+  body_add_flextable(ft) %>%
+  body_end_section_landscape()
+
+print (my_doc, target = my_path)
+
+
+```
+
 
 # Set colour schems
 
@@ -124,7 +187,7 @@ df_plot <- list("Ankle" = df_plot[["ankle"]],
 
 pdf (width = 20, height = 15, file = "manuscript/smfig_individual.pdf")
 
-par(mfrow=c(1, 3))
+par(mfrow=c(2, 2))
 par (mar = c(5, 7, 1, 1))
 
 for(i in which(sapply(df_plot, is.matrix))){
@@ -140,83 +203,161 @@ dev.off()
 
 ```
 
+# Get predictive error
+
+```{r}
+
+# Ankle
+
+dat_a <- dat %>%
+  filter (joint == "ankle") %>%
+  filter (cycle > 20 & cycle < 70) %>%
+  mutate (fit = predict (mod_ankle[[1]]))
+
+obs <- dat_a %>%
+  dplyr::select (subj, cycle, speed, val) %>%
+  pivot_wider(names_from = "cycle",
+              values_from = "val") %>%
+  dplyr::select (-c(subj, speed)) %>%
+  as.matrix()
+
+pred <- dat_a %>%
+  dplyr::select (subj, cycle, speed, fit) %>%
+  pivot_wider(names_from = "cycle",
+              values_from = "fit") %>%
+  dplyr::select (-c(subj, speed)) %>%
+  as.matrix()
+
+error_a <- apply (all_measures(obs, pred), 2, mean)
+
+# Knee
+
+dat_a <- dat %>%
+  filter (joint == "knee") %>%
+  mutate (fit = predict (mod_knee[[1]]))
+
+obs <- dat_a %>%
+  dplyr::select (subj, cycle, speed, val) %>%
+  pivot_wider(names_from = "cycle",
+              values_from = "val") %>%
+  dplyr::select (-c(subj, speed)) %>%
+  as.matrix()
+
+pred <- dat_a %>%
+  dplyr::select (subj, cycle, speed, fit) %>%
+  pivot_wider(names_from = "cycle",
+              values_from = "fit") %>%
+  dplyr::select (-c(subj, speed)) %>%
+  as.matrix()
+
+error_k <- apply (all_measures(obs, pred), 2, mean)
+
+# Hip
+
+dat_a <- dat %>%
+  filter (joint == "hip") %>%
+  mutate (fit = predict (mod_hip[[1]]))
+
+obs <- dat_a %>%
+  dplyr::select (subj, cycle, speed, val) %>%
+  pivot_wider(names_from = "cycle",
+              values_from = "val") %>%
+  dplyr::select (-c(subj, speed)) %>%
+  as.matrix()
+
+pred <- dat_a %>%
+  dplyr::select (subj, cycle, speed, fit) %>%
+  pivot_wider(names_from = "cycle",
+              values_from = "fit") %>%
+  dplyr::select (-c(subj, speed)) %>%
+  as.matrix()
+
+error_h <- apply (all_measures(obs, pred), 2, mean)
+
+bind(error_a, error_k, error_h)
+```
+
 
 # Smooth plots
 
-## Ankle
-
-### Smooth effect of age
+## Smooth effect of age
 
 ```{r}
-plot (getSmo(mod_ankle[[1]]), 
-      select = 2, 
-      ylab = "Power (W/kg)", 
-      xlab = "Age (years)",
-      ylim = c(-0.10, 0.10), 
-      shade = TRUE)
+
+# Get smoother into a table
+
+asmo <- get_modelterm (getSmo(mod_ankle[[1]]), 
+                      select = 2, 
+                      n.grid = 100,
+                      se = TRUE,
+                      as.data.frame = TRUE)
+
+ksmo <- get_modelterm (getSmo(mod_knee[[1]]), 
+                      select = 2, 
+                      n.grid = 100,
+                      se = TRUE,
+                      as.data.frame = TRUE)
+
+hsmo <- get_modelterm (getSmo(mod_hip[[1]]), 
+                      select = 2, 
+                      n.grid = 100,
+                      se = TRUE,
+                      as.data.frame = TRUE)
+
+agesmo <- bind_rows (asmo, ksmo, hsmo) %>%
+  mutate (joint = rep (c("ankle", "knee", "hip"), each = 100))
+
+# Plot
+
+pdf (width = 8, height = 5, file = "manuscript/fig1.pdf")
+
+  ggplot (agesmo) +
+    geom_line (aes (x = age, y = fit), size = 1) +
+    geom_ribbon(aes (x = age, 
+                     ymin = fit - 1.96 * se.fit, 
+                     ymax = fit + 1.96 * se.fit), 
+                fill = "lightblue", 
+                alpha = 0.5) + 
+    facet_wrap (~ joint, ncol = 2, scales = "fixed") + 
+    labs (x = "Age (yo)",
+          y = "Power (W/kg)") +
+    theme_cowplot()
+
+dev.off()
 ```
 
-### Smooth effect of speed
+## Get peak values of smooth
 
 ```{r}
-plot (getSmo(mod_ankle[[1]]), 
-      select = 3, 
-      ylab = "Power (W/kg)", 
-      xlab = "Speed (m/s)",
-      ylim = c(-0.5, 0.5), 
-      shade = TRUE)
+# Ankle maximum
+
+peaks <- asmo[asmo$fit == max (asmo$fit),]
+f <- peaks[,2]
+lcl <- f - 1.96 * peaks[,3]
+ucl <- f + 1.96 * peaks[,3]
+age <- peaks[,1]
+cat ("The max value of ankle is ", round (f, 2), "(95%CI", round (lcl, 2), "to", round (ucl, 2), ")", "which occurs at", round (age, 0), "(years)")
+
+# Knee minimum
+
+peaks <- ksmo[ksmo$fit == min (ksmo$fit),]
+f <- peaks[,2]
+lcl <- f - 1.96 * peaks[,3]
+ucl <- f + 1.96 * peaks[,3]
+age <- peaks[,1]
+cat ("The max value of knee is ", round (f, 2), "(95%CI", round (lcl, 2), "to", round (ucl, 2), ")", "which occurs at", round (age, 0), "(years)")
+
+# Hip minimum
+
+peaks <- hsmo[hsmo$fit == min (hsmo$fit),]
+f <- peaks[,2]
+lcl <- f - 1.96 * peaks[,3]
+ucl <- f + 1.96 * peaks[,3]
+age <- peaks[,1]
+cat ("The max value of hip is ", round (f, 2), "(95%CI", round (lcl, 2), "to", round (ucl, 2), ")", "which occurs at", round (age, 0), "(years)")
 
 ```
 
-## Knee
-
-### Smooth effect of age
-
-```{r}
-plot (getSmo(mod_knee[[1]]), 
-      select = 2, 
-      ylab = "Power (W/kg)", 
-      xlab = "Age (years)",
-      ylim = c(-0.20, 0.10), 
-      shade = TRUE)
-```
-
-### Smooth effect of speed
-
-```{r}
-plot (getSmo(mod_knee[[1]]), 
-      select = 3, 
-      ylab = "Power (W/kg)", 
-      xlab = "Speed (m/s)",
-      ylim = c(-0.05, 0.05), 
-      shade = TRUE)
-
-```
-
-## Hip
-
-### Smooth effect of age
-
-```{r}
-plot (getSmo(mod_hip[[1]]), 
-      select = 2, 
-      ylab = "Power (W/kg)", 
-      xlab = "Age (years)",
-      ylim = c(-0.25, 0.10), 
-      shade = TRUE)
-```
-
-### Smooth effect of speed
-
-```{r}
-plot (getSmo(mod_hip[[1]]), 
-      select = 3, 
-      ylab = "Power (W/kg)", 
-      xlab = "Speed (m/s)",
-      ylim = c(-0.4, 0.2), 
-      shade = TRUE)
-
-```
 
 # Prediction inference
 
@@ -251,15 +392,12 @@ ank_plot <- ggplot (pp_ank) +
   geom_line (aes (x = cycle, y = fit, colour = age)) +
   scale_colour_manual(values = cbp2) +
   facet_wrap (~ speed, ncol = 2, scales = "fixed") + 
+  xlim (1, 101) + 
   labs (x = "% Stride",
         y = "Power (W/kg)",
         colour = "Age (yo)") +
   guides (fill = FALSE) +
   theme_cowplot()
-
-pdf (width = 8, height = 5, file = "manuscript/fig1.pdf")
-ank_plot
-dev.off()
 
 
 ```
@@ -289,9 +427,7 @@ kne_plot <- ggplot (pp_kne) +
   guides (fill = FALSE) +
   theme_cowplot()
 
-pdf (width = 8, height = 5, file = "manuscript/fig2.pdf")
-kne_plot
-dev.off()
+
 ```
 
 ### Hip
@@ -318,9 +454,6 @@ hip_plot <- ggplot (pp_hip) +
   guides (fill = FALSE) +
   theme_cowplot()
 
-pdf (width = 8, height = 5, file = "manuscript/fig3.pdf")
-hip_plot
-dev.off()
 ```
 
 ### Plot all joints waveform
@@ -351,7 +484,7 @@ legend <- get_legend(
 )
 
 
-pdf (width = 8, height = 5, file = "manuscript/fig4.pdf")
+pdf (width = 8, height = 8, file = "manuscript/fig2.pdf")
 
 # add the legend to the row we made earlier. Give it one-third of 
 # the width of one plot (via rel_widths).
@@ -440,7 +573,7 @@ h3_plot <- ggplot (h3) +
 
 ```{r}
 
-pdf (width = 8, height = 5, file = "manuscript/fig5.pdf")
+pdf (width = 8, height = 5, file = "manuscript/fig3.pdf")
 
  plot_grid (a2_plot + 
               theme(
