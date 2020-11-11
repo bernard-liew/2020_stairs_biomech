@@ -508,9 +508,9 @@ a2_plot <- ggplot (a2) +
   geom_point(aes (x = age, y = fit, group = 1)) +
   geom_line (aes (x = age, y = fit, group = 1)) + 
   geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
-  facet_wrap (strlen ~ speed, ncol = 2, scales = "fixed") + 
+  facet_wrap ( ~ speed, ncol = 2, scales = "fixed") + 
   labs (x = "Age (yo)",
-        y = "Power (W/kg)") +
+        y = "A2 (W/kg)") +
   theme_cowplot()
 
 ```
@@ -528,9 +528,9 @@ k2_plot <- ggplot (k2) +
   geom_point(aes (x = age, y = fit, group = 1)) +
   geom_line (aes (x = age, y = fit, group = 1)) + 
   geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
-  facet_wrap (strlen ~ speed, ncol = 2, scales = "fixed") + 
+  facet_wrap ( ~ speed, ncol = 2, scales = "fixed") + 
   labs (x = "Age (yo)",
-        y = "Power (W/kg)") +
+        y = "K2 (W/kg)") +
   theme_cowplot()
 
 ```
@@ -548,9 +548,9 @@ h1_plot <- ggplot (h1) +
   geom_point(aes (x = age, y = fit, group = 1)) +
   geom_line (aes (x = age, y = fit, group = 1)) + 
   geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
-  facet_wrap (strlen ~ speed, ncol = 2, scales = "fixed") + 
+  facet_wrap ( ~ speed, ncol = 2, scales = "fixed") + 
   labs (x = "Age (yo)",
-        y = "Power (W/kg)") +
+        y = "H1 (W/kg)") +
   theme_cowplot()
 
 # H3
@@ -563,13 +563,14 @@ h3_plot <- ggplot (h3) +
   geom_point(aes (x = age, y = fit, group = 1)) +
   geom_line (aes (x = age, y = fit, group = 1)) + 
   geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
-  facet_wrap (strlen ~ speed, ncol = 2, scales = "fixed") + 
+  facet_wrap ( ~ speed, ncol = 2, scales = "fixed") + 
   labs (x = "Age (yo)",
-        y = "Power (W/kg)") +
+        y = "H3 (W/kg)") +
   theme_cowplot()
 
 ```
 
+## Plot discrete powers
 
 ```{r}
 
@@ -589,8 +590,193 @@ pdf (width = 8, height = 5, file = "manuscript/fig3.pdf")
             ncol = 2,
             vjust = 1.5,
             hjust = 0,
+            align = "v",
             labels = "auto")
 
 dev.off()
+```
+
+## Report peaks
+
+```{r}
+# Ankle
+## 1m/s
+
+row_of_peak <- a2 %>% 
+  ungroup () %>% 
+  filter (speed == 1) %>% 
+  slice_max(fit) 
+
+age_at_peak <- row_of_peak %>% 
+  pluck ("age") %>%
+  as.character() %>%
+  as.numeric()
+
+fit <- row_of_peak %>%
+  pluck ("fit")%>%
+  round (2)
+
+ci <- row_of_peak %>%
+  pluck ("CI") %>%
+  round (2)
+
+cat ("Power peaked at the age of", age_at_peak, "with a value of ", fit, "(95%CI", fit - ci, "to", fit + ci, ")")
+
+## 1.5m/s
+
+row_of_peak <- a2 %>% 
+  ungroup () %>% 
+  filter (speed == 1.5) %>% 
+  slice_max(fit) 
+
+age_at_peak <- row_of_peak %>% 
+  pluck ("age") %>%
+  as.character() %>%
+  as.numeric()
+
+fit <- row_of_peak %>%
+  pluck ("fit")%>%
+  round (2)
+
+ci <- row_of_peak %>%
+  pluck ("CI") %>%
+  round (2)
+
+cat ("Power peaked at the age of", age_at_peak, "with a value of ", fit, "(95%CI", fit - ci, "to", fit + ci, ")")
+
+# Knee
+## 1m/s
+
+row_of_peak <- k2 %>% 
+  ungroup () %>% 
+  filter (speed == 1) %>% 
+  slice_max(fit) 
+
+age_at_peak <- row_of_peak %>% 
+  pluck ("age") %>%
+  as.character() %>%
+  as.numeric()
+
+fit <- row_of_peak %>%
+  pluck ("fit")%>%
+  round (2)
+
+ci <- row_of_peak %>%
+  pluck ("CI") %>%
+  round (2)
+
+cat ("Power peaked at the age of", age_at_peak, "with a value of ", fit, "(95%CI", fit - ci, "to", fit + ci, ")")
+
+## 1.5m/s
+
+row_of_peak <- k2 %>% 
+  ungroup () %>% 
+  filter (speed == 1.5) %>% 
+  slice_max(fit) 
+
+age_at_peak <- row_of_peak %>% 
+  pluck ("age") %>%
+  as.character() %>%
+  as.numeric()
+
+fit <- row_of_peak %>%
+  pluck ("fit")%>%
+  round (2)
+
+ci <- row_of_peak %>%
+  pluck ("CI") %>%
+  round (2)
+
+cat ("Power peaked at the age of", age_at_peak, "with a value of ", fit, "(95%CI", fit - ci, "to", fit + ci, ")")
+
+# Hip H1
+## 1m/s
+
+row_of_peak <- h1 %>% 
+  ungroup () %>% 
+  filter (speed == 1) %>% 
+  slice_max(fit) 
+
+age_at_peak <- row_of_peak %>% 
+  pluck ("age") %>%
+  as.character() %>%
+  as.numeric()
+
+fit <- row_of_peak %>%
+  pluck ("fit")%>%
+  round (2)
+
+ci <- row_of_peak %>%
+  pluck ("CI") %>%
+  round (2)
+
+cat ("Power peaked at the age of", age_at_peak, "with a value of ", fit, "(95%CI", fit - ci, "to", fit + ci, ")")
+
+## 1.5m/s
+
+row_of_peak <- h1 %>% 
+  ungroup () %>% 
+  filter (speed == 1.5) %>% 
+  slice_max(fit) 
+
+age_at_peak <- row_of_peak %>% 
+  pluck ("age") %>%
+  as.character() %>%
+  as.numeric()
+
+fit <- row_of_peak %>%
+  pluck ("fit")%>%
+  round (2)
+
+ci <- row_of_peak %>%
+  pluck ("CI") %>%
+  round (2)
+
+cat ("Power peaked at the age of", age_at_peak, "with a value of ", fit, "(95%CI", fit - ci, "to", fit + ci, ")")
+
+# Hip H3
+## 1m/s
+
+row_of_peak <- h3 %>% 
+  ungroup () %>% 
+  filter (speed == 1) %>% 
+  slice_max(fit) 
+
+age_at_peak <- row_of_peak %>% 
+  pluck ("age") %>%
+  as.character() %>%
+  as.numeric()
+
+fit <- row_of_peak %>%
+  pluck ("fit")%>%
+  round (2)
+
+ci <- row_of_peak %>%
+  pluck ("CI") %>%
+  round (2)
+
+cat ("Power peaked at the age of", age_at_peak, "with a value of ", fit, "(95%CI", fit - ci, "to", fit + ci, ")")
+
+## 1.5m/s
+
+row_of_peak <- h3 %>% 
+  ungroup () %>% 
+  filter (speed == 1.5) %>% 
+  slice_max(fit) 
+
+age_at_peak <- row_of_peak %>% 
+  pluck ("age") %>%
+  as.character() %>%
+  as.numeric()
+
+fit <- row_of_peak %>%
+  pluck ("fit")%>%
+  round (2)
+
+ci <- row_of_peak %>%
+  pluck ("CI") %>%
+  round (2)
+
+cat ("Power peaked at the age of", age_at_peak, "with a value of ", fit, "(95%CI", fit - ci, "to", fit + ci, ")")
 ```
 
