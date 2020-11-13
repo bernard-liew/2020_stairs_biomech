@@ -14,6 +14,7 @@ rm (list = ls())
 # Helper
 library (tidyverse)
 library (qwraps2)
+library (magrittr)
 
 # modelling
 library (gamlss)
@@ -112,6 +113,68 @@ print (my_doc, target = my_path)
 
 ```
 
+# Descriptive plots
+
+```{r}
+# Height
+f1 <- ggplot(dat_sub, aes(x = age, ht)) +
+      geom_point () + 
+      geom_smooth(method = "gam", formula = y ~ s(x, bs = "cr")) + 
+      labs (x = "Age (yo)",
+            y = "Height (m)") +
+      theme_cowplot() 
+# Weight
+f2 <- ggplot(dat_sub, aes(x = age, wt)) +
+      geom_point () + 
+      geom_smooth(method = "gam", formula = y ~ s(x, bs = "cr")) + 
+      labs (x = "Age (yo)",
+            y = "Weight (kg)") +
+      theme_cowplot() 
+# Speed
+f3 <- ggplot(dat_sub, aes(x = age, speed)) +
+      geom_point () + 
+      geom_smooth(method = "gam", formula = y ~ s(x, bs = "cr")) + 
+      labs (x = "Age (yo)",
+            y = "Speed (m/s)") +
+      theme_cowplot()
+# Stride length
+f4 <- ggplot(dat_sub, aes(x = age, strlen)) +
+      geom_point () + 
+      geom_smooth(method = "gam", formula = y ~ s(x, bs = "cr")) + 
+      labs (x = "Age (yo)",
+            y = "Stride length (m)") +
+      theme_cowplot() 
+# Sex
+f5 <- dat_sub %>%
+  group_by(sex) %>%
+  summarize (age_mean = mean (age),
+          age_sd = sd (age)) %>%
+  ggplot() +
+      geom_col (aes (x = sex, y = age_mean)) +
+      geom_errorbar(aes (x = sex, ymin = age_mean - age_sd, ymax  = age_mean + age_sd), width = 0.1) + 
+      labs (x = "Sex",
+            y = "Age (yo)") +
+      theme_cowplot() 
+
+pcol <- plot_grid (f1, 
+              f2,
+              f3, 
+              f4, 
+              f5,
+            nrow = 3,
+            ncol = 2,
+            vjust = 1.5,
+            hjust = 0,
+            labels = "auto")
+
+
+
+pdf (width = 8, height = 8, file = "manuscript/fig1.pdf")
+
+pcol
+
+dev.off()
+```
 
 # Set colour schems
 
@@ -309,7 +372,7 @@ agesmo <- bind_rows (asmo, ksmo, hsmo) %>%
 
 # Plot
 
-pdf (width = 8, height = 5, file = "manuscript/fig1.pdf")
+pdf (width = 8, height = 5, file = "manuscript/fig2.pdf")
 
   ggplot (agesmo) +
     geom_line (aes (x = age, y = fit), size = 1) +
@@ -484,7 +547,7 @@ legend <- get_legend(
 )
 
 
-pdf (width = 8, height = 8, file = "manuscript/fig2.pdf")
+pdf (width = 8, height = 8, file = "manuscript/fig3.pdf")
 
 # add the legend to the row we made earlier. Give it one-third of 
 # the width of one plot (via rel_widths).
@@ -574,7 +637,7 @@ h3_plot <- ggplot (h3) +
 
 ```{r}
 
-pdf (width = 8, height = 5, file = "manuscript/fig3.pdf")
+pdf (width = 8, height = 5, file = "manuscript/fig4.pdf")
 
  plot_grid (a2_plot + 
               theme(
