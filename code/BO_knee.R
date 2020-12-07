@@ -43,7 +43,7 @@ scoringFunction <- function(
   k_strlen,
   k_cycle_strlen_1,
   k_cycle_strlen_2,
-  k_cycle_re,
+  # k_cycle_re,
   cycle_age
 ) {
   
@@ -69,7 +69,7 @@ scoringFunction <- function(
   k_strlen <- roundBelow3(k_strlen)
   k_cycle_strlen_1 <- roundBelow3(k_cycle_strlen_1)
   k_cycle_strlen_2 <- roundBelow3(k_cycle_strlen_2)
-  k_cycle_re <- roundBelow3(k_cycle_re)
+  # k_cycle_re <- roundBelow3(k_cycle_re)
   
   bs <-  "cr"
   
@@ -114,9 +114,9 @@ scoringFunction <- function(
            k_cycle_strlen_2)>0))
     form <- paste0(form, 
                    "+ ti (cycle, strlen, k = c(k_cycle_strlen_1, k_cycle_strlen_1), bs = bs)")
-  if(k_cycle_re>0)
-    form <- paste0(form, 
-                   "+ ti (cycle, k = k_cycle_re, by = study, bs = 're')")
+  # if(k_cycle_re>0)
+  #   form <- paste0(form, 
+  #                  "+ ti (cycle, k = k_cycle_re, by = study, bs = 're')")
   
   form <- as.formula(form)
   
@@ -164,8 +164,8 @@ bounds <- list(
   k_cycle_strlen_1 = c(0L,15L),
   k_cycle_strlen_2 = c(0L,15L),
   k_ht = c(5L,15L),
-  k_strlen = c(5L, 20L),
-  k_cycle_re = c(5L,25L)
+  k_strlen = c(5L, 20L)#,
+  # k_cycle_re = c(5L,25L)
 )
 
 

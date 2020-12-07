@@ -17,7 +17,7 @@ settings_to_formula <- function(
   k_strlen,
   k_cycle_strlen_1,
   k_cycle_strlen_2,
-  k_cycle_re,
+  # k_cycle_re,
   cycle_age
   ) {
     
@@ -43,7 +43,7 @@ settings_to_formula <- function(
   k_strlen <- roundBelow3(k_strlen)
   k_cycle_strlen_1 <- roundBelow3(k_cycle_strlen_1)
   k_cycle_strlen_2 <- roundBelow3(k_cycle_strlen_2)
-  k_cycle_re <- roundBelow3(k_cycle_re)
+  # k_cycle_re <- roundBelow3(k_cycle_re)
   
   form <-  paste0("~ ",
                   "ti (cycle, k = ", k_cycle, ", bs = 'cr') + ",
@@ -87,9 +87,9 @@ settings_to_formula <- function(
            k_cycle_strlen_2)>0))
     form <- paste0(form, 
                    "+ ti (cycle, strlen, k = c(",k_cycle_strlen_1,",", k_cycle_strlen_1,"), bs = 'cr')")
-  if(k_cycle_re>0)
-    form <- paste0(form, 
-                   "+ ti (cycle, k = ", k_cycle_re,", by = study, bs = 're')")
+  # if(k_cycle_re>0)
+  #   form <- paste0(form, 
+  #                  "+ ti (cycle, k = ", k_cycle_re,", by = study, bs = 're')")
   
   return(form)
   

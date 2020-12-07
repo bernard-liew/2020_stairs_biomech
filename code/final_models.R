@@ -17,7 +17,7 @@ create_final_model <- function(joint = "ankle" ,
                                use_best_family = FALSE,
                                defined_family = "NO",
                                data = NULL,
-                               withRE = TRUE)
+                               withRE = "studysubj")
 {
 
   ############# read hold-out set ##############
@@ -39,7 +39,7 @@ create_final_model <- function(joint = "ankle" ,
   best_setting <- df_bo %>%
     arrange(Score) %>%
     dplyr::select(k_cycle:Score) %>%
-    dplyr::select(k_cycle:k_cycle_re) %>%
+    dplyr::select(k_cycle:k_strlen) %>%
     head(1) %>% c()
   form <- do.call(settings_to_formula, best_setting)
   if(withRE=="subj"){
@@ -47,6 +47,8 @@ create_final_model <- function(joint = "ankle" ,
   }else if(withRE=="study")
   {
     form <- paste0("val ~ ba(", form, " + s(study, bs = 're'))")
+  }else if(withRE=="studysubj"){
+    form <- paste0("val ~ ba(", form, " + s(study, bs = 're') + s(study, subj, bs = 're'))")
   }else{
     form <- paste0("val ~ ba(", form, ")")
   }

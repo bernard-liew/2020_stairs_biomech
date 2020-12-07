@@ -35,7 +35,7 @@ df_bo_hip <- bo_hip$scoreSummary %>%
 best_setting <- df_bo_hip %>% 
   arrange(Score) %>% 
   dplyr::select(k_cycle:Score) %>%  
-  dplyr::select(k_cycle:k_cycle_re) %>% 
+  dplyr::select(k_cycle:k_strlen) %>% 
   head(1) %>% c()
 
 form <- do.call(settings_to_formula, best_setting)
