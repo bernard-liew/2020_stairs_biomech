@@ -337,7 +337,7 @@ pred <- dat_a %>%
 
 error_h <- apply (all_measures(obs, pred), 2, mean)
 
-bind(error_a, error_k, error_h)
+bind_rows (error_a, error_k, error_h)
 ```
 
 
