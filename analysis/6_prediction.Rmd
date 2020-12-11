@@ -116,60 +116,110 @@ print (my_doc, target = my_path)
 # Descriptive plots
 
 ```{r}
+age_cut <- seq (10, 90, 10)
+age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)])
+
+age_labels[1] <- "18 - 20"
+
+df_plot <- dat %>%
+  filter(study != "lencioni") %>% # data reported dissimilar to others
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels, levels = age_labels)) %>%
+  distinct (subj, .keep_all = TRUE) %>%
+  group_by(age_cat) %>%
+  summarize (age_m = mean (age),
+             age_sd = sd(age),
+             speed_m = mean (speed),
+             speed_sd = sd(speed),
+             ht_m = mean (ht),
+             ht_sd = sd(ht),
+             wt_m = mean (wt),
+             wt_sd = sd(wt),
+             str_m = mean (strlen),
+             str_sd = sd (strlen))
+
+df_plot_sex <- dat %>%
+  filter(study != "lencioni") %>% # data reported dissimilar to others
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels, levels = age_labels)) %>%
+  distinct (subj, .keep_all = TRUE) %>%
+  group_by(age_cat, sex) %>%
+  summarize (n = n ())
+
+# Age
+f1 <- ggplot(df_plot, aes(x = age_cat)) +
+  geom_point (aes (y = age_m)) +
+  geom_errorbar(aes (ymin = age_m - age_sd, ymax = age_m + age_sd), width = 0.2) + 
+  labs (x = "Age category",
+        y = "Age (years)") +
+  theme_cowplot() + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) 
 # Height
-f1 <- ggplot(dat_sub, aes(x = age, ht)) +
-      geom_point () + 
-      geom_smooth(method = "gam", formula = y ~ s(x, bs = "cr")) + 
-      labs (x = "Age (yo)",
-            y = "Height (m)") +
-      theme_cowplot() 
+f2 <- ggplot(df_plot, aes(x = age_cat)) +
+  geom_point (aes (y = ht_m)) +
+  geom_errorbar(aes (ymin = ht_m - ht_sd, ymax = ht_m + ht_sd), width = 0.2) + 
+  labs (x = "Age category",
+        y = "Height (m)") +
+  theme_cowplot() + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) 
+
 # Weight
-f2 <- ggplot(dat_sub, aes(x = age, wt)) +
-      geom_point () + 
-      geom_smooth(method = "gam", formula = y ~ s(x, bs = "cr")) + 
-      labs (x = "Age (yo)",
-            y = "Weight (kg)") +
-      theme_cowplot() 
+f3 <- ggplot(df_plot, aes(x = age_cat)) +
+  geom_point (aes (y = wt_m)) +
+  geom_errorbar(aes (ymin = wt_m - wt_sd, ymax = wt_m + wt_sd), width = 0.2) + 
+  labs (x = "Age category",
+        y = "Mass (kg)") +
+  theme_cowplot() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) 
+
 # Speed
-f3 <- ggplot(dat_sub, aes(x = age, speed)) +
-      geom_point () + 
-      geom_smooth(method = "gam", formula = y ~ s(x, bs = "cr")) + 
-      labs (x = "Age (yo)",
-            y = "Speed (m/s)") +
-      theme_cowplot()
+f4 <- ggplot(df_plot, aes(x = age_cat)) +
+  geom_point (aes (y = speed_m)) +
+  geom_errorbar(aes (ymin = speed_m - speed_sd, ymax = speed_m + speed_sd), width = 0.2) + 
+  labs (x = "Age category",
+        y = "Speed (m/s)") +
+  theme_cowplot() + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) 
+
 # Stride length
-f4 <- ggplot(dat_sub, aes(x = age, strlen)) +
-      geom_point () + 
-      geom_smooth(method = "gam", formula = y ~ s(x, bs = "cr")) + 
-      labs (x = "Age (yo)",
-            y = "Stride length (m)") +
-      theme_cowplot() 
+f5 <- ggplot(df_plot, aes(x = age_cat)) +
+  geom_point (aes (y = str_m)) +
+  geom_errorbar(aes (ymin = str_m - str_sd, ymax = str_m + str_sd), width = 0.2) + 
+  labs (x = "Age category",
+        y = "Stride length (m)") +
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) 
+
 # Sex
-f5 <- dat_sub %>%
-  group_by(sex) %>%
-  summarize (age_mean = mean (age),
-          age_sd = sd (age)) %>%
-  ggplot() +
-      geom_col (aes (x = sex, y = age_mean)) +
-      geom_errorbar(aes (x = sex, ymin = age_mean - age_sd, ymax  = age_mean + age_sd), width = 0.1) + 
-      labs (x = "Sex",
-            y = "Age (yo)") +
-      theme_cowplot() 
+f6 <- ggplot(df_plot_sex, aes(x = age_cat)) +
+  geom_bar (aes (y = n, fill = sex), position = position_dodge(preserve = "single"), stat = "identity") +
+  scale_fill_manual (values = c("red", "blue")) + 
+  labs (x = "Age category",
+        y = "No. participants") +
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) 
 
-pcol <- plot_grid (f1, 
-              f2,
-              f3, 
-              f4, 
-              f5,
-            nrow = 3,
-            ncol = 2,
-            vjust = 1.5,
-            hjust = 0,
-            labels = "auto")
+pcol <- plot_grid (f1 + theme (axis.title.x = element_blank() ), 
+                   f2 + theme (axis.title.x = element_blank()), 
+                   f3 + theme (axis.title.x = element_blank()),  
+                   f4 + theme (axis.title.x = element_blank()),  
+                   f5,
+                   f6,
+                   nrow = 3,
+                   ncol = 2,
+                   vjust = 1.5,
+                   hjust = 0,
+                   labels = "auto")
 
 
 
-pdf (width = 8, height = 8, file = "manuscript/fig1.pdf")
+pdf (width = 12, height = 8, file = "manuscript/fig1.pdf")
 
 pcol
 
@@ -186,8 +236,6 @@ cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
 # Plot original average data
 
 ```{r}
-age_cut <- seq (10, 90, 10)
-age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
 
 speed_cut <- c(0.7, 1.0, 1.5, 1.9)
 speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
@@ -410,6 +458,15 @@ ucl <- f + 1.96 * peaks[,3]
 age <- peaks[,1]
 cat ("The max value of knee is ", round (f, 2), "(95%CI", round (lcl, 2), "to", round (ucl, 2), ")", "which occurs at", round (age, 0), "(years)")
 
+# Hip maximum
+
+peaks <- hsmo[hsmo$fit == max (hsmo$fit),]
+f <- peaks[,2]
+lcl <- f - 1.96 * peaks[,3]
+ucl <- f + 1.96 * peaks[,3]
+age <- peaks[,1]
+cat ("The max value of hip is ", round (f, 2), "(95%CI", round (lcl, 2), "to", round (ucl, 2), ")", "which occurs at", round (age, 0), "(years)")
+
 # Hip minimum
 
 peaks <- hsmo[hsmo$fit == min (hsmo$fit),]
@@ -417,7 +474,7 @@ f <- peaks[,2]
 lcl <- f - 1.96 * peaks[,3]
 ucl <- f + 1.96 * peaks[,3]
 age <- peaks[,1]
-cat ("The max value of hip is ", round (f, 2), "(95%CI", round (lcl, 2), "to", round (ucl, 2), ")", "which occurs at", round (age, 0), "(years)")
+cat ("The min value of hip is ", round (f, 2), "(95%CI", round (lcl, 2), "to", round (ucl, 2), ")", "which occurs at", round (age, 0), "(years)")
 
 ```
 
