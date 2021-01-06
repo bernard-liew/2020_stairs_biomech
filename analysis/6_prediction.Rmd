@@ -694,20 +694,23 @@ h3_plot <- ggplot (h3) +
 
 ```{r}
 
-pdf (width = 8, height = 5, file = "manuscript/fig4.pdf")
+pdf (width = 6, height = 7, file = "manuscript/fig4.pdf")
 
  plot_grid (a2_plot + 
               theme(
                 axis.text.x = element_blank(),
                 axis.title.x = element_blank()),
-            k2_plot +
+            # k2_plot +
+            #   theme(
+            #     axis.text.x = element_blank(),
+            #     axis.title.x = element_blank()),
+            h1_plot+ 
               theme(
                 axis.text.x = element_blank(),
                 axis.title.x = element_blank()),
-            h1_plot,
             h3_plot ,
-            nrow = 2,
-            ncol = 2,
+            nrow = 3,
+            ncol = 1,
             vjust = 1.5,
             hjust = 0,
             align = "v",
