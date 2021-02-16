@@ -9,511 +9,650 @@ editor_options:
   
 ```{r}
 
-rm (list = ls())
+library(mgcv)
+library(dplyr)
+library(tidyr)
+library(parallel)
+library(gamlss)
+library(gamlss.dist)
+library(gamlss.add)
+library(ParBayesianOptimization)
+library(parallel)
 
-# Helper
-library (tidyverse)
+roundBelow3 <- function(x) ifelse(x<3,0,x)
 
-# Import
-library (rio)
 
-# Exploration 
-library (DataExplorer)
-library (janitor)
-library (arsenal)
-library (ggforce)
-library (moments)
-
-# modelling
-library (gamlss)
-library (gamlss.add)
-library (bamlss)
-library( gamlss.dist )
-library (bigsplines)
-
-# parallel
-library(doParallel)
-library(foreach)
-library (furrr)
-
-# Plotting
-library (distreg.vis)
-library (plotly)
-
+source("code/measures_johnson.R")
+source("code/settings_to_formula.R")
 
 
 ```
 
-# Import data
-
-```{r}
-
-output_dir <- "output"
-file_name <- "df_clean.RDS"
-
-df <- readRDS (file.path(output_dir, file_name))
-
-
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  eval = FALSE
+)
 ```
 
-# Subset data
+# Bayesian optimization
+
+## Tune smoothing parameters and covariates
+
+### Ankle
 
 ```{r}
-m_in_cm <- function(x) if(x<100) x * 100 else x
+# Load data --------------------------------------------------------------------
 
-df_ankle <- df  %>%
-  filter (joint == "ankle") %>% 
-  group_by(subj, joint, cycle) %>% 
-  summarise(age = mean(age),
-            sex = sex[1],
-            ht = m_in_cm(mean(ht)),
-            speed = mean(speed),
-            val = mean(val),
-            study = study[1]) %>% 
-  ungroup() %>% 
-  mutate(sex = as.factor(sex),
-         subj = as.factor(subj),
-         study = as.factor(study))
+data <- readRDS("output/ankle_splitted.RDS")
+train <- do.call("rbind", data[c(1,3)])
+test <- data[[2]]
+test <- test %>% arrange(subj, cycle)
+# create true functional matrix
+# with 49 observations, 1 row = 1 subject
+trueMat <- test %>% spread(cycle, val) %>% dplyr::select(`21`:`69`) %>% as.matrix()
+# does not look too good though (?)
+matplot(t(trueMat), type="l", col = 
+          test %>% 
+          filter(cycle==21) %>% 
+          pull(study) %>% as.numeric)
+rm(data)
 
-df_knee <- df %>%
-  filter (joint  == "knee") %>% 
-  group_by(subj, joint, cycle) %>% 
-  summarise(age = mean(age),
-            sex = sex[1],
-            ht = m_in_cm(mean(ht)),
-            speed = mean(speed),
-            val = mean(val),
-            study = study[1]) %>% 
-  ungroup() %>% 
-  mutate(sex = as.factor(sex),
-         subj = as.factor(subj),
-         study = as.factor(study))
+# Define objective function ----------------------------------------------------
 
-
-df_hip <- df  %>%
-  filter (joint  == "hip") %>% 
-  group_by(subj, joint, cycle) %>% 
-  summarise(age = mean(age),
-            sex = sex[1],
-            ht = m_in_cm(mean(ht)),
-            speed = mean(speed),
-            val = mean(val),
-            study = study[1]) %>% 
-  ungroup() %>% 
-  mutate(sex = as.factor(sex),
-         subj = as.factor(subj),
-         study = as.factor(study))
-
-saveRDS(df_ankle, file.path(output_dir, "df_ankle.RDS"))
-saveRDS(df_knee, file.path(output_dir, "df_knee.RDS"))
-saveRDS(df_hip, file.path(output_dir, "df_hip.RDS"))
-
-```
-
-
-# Descriptives
-
-```{r}
-
-age_cut <- seq (15, 95, 10)
-age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
-
-age_labels[1] <- "18 - 25 (yo)"
-
-df.summary <- df %>%
-  mutate (age_cat  = cut (age, age_cut, labels = age_labels)) %>%
-  group_by(subj) %>%
-  slice (1) %>%
-  ungroup()%>%
-  dplyr::select (-c(val, cycle, joint, subj))
-
+scoringFunction <- function(
+  k_cycle, 
+  k_age,
+  k_speed,
+  k_cycle_age_1,
+  k_cycle_age_2,
+  k_cycle_speed_1,
+  k_cycle_speed_2,
+  k_age_speed_1,
+  k_age_speed_2,
+  k_cycle_age_speed_1,
+  k_cycle_age_speed_2,
+  k_cycle_age_speed_3,
+  k_cycle_ht_1,
+  k_cycle_ht_2,
+  k_ht,
+  k_strlen,
+  k_cycle_strlen_1,
+  k_cycle_strlen_2,
+  # k_cycle_re,
+  cycle_age
+) {
   
-summary (tableby(study ~., data = df.summary), text = TRUE)
-
-```
-
-
-# GAMLSS modelling
-
-## ankle
-
-### Sample the data
-
-```{r}
-
-age_cut <- seq (5, 95, 10)
-age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)], " (yo)")
-
-speed_cut <- seq (0.5, 2.0, 0.5)
-speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
-
-cycle_cut <- seq (0, 106, 5)
-cycle_labels <- seq (1, 105, 5)
-
-df_ankle_downsamp <- df_ankle %>%
-  filter (cycle %in% seq (1, 101, 3))
-
-add_cat <-  df_ankle_downsamp %>%
-  mutate (age_cat  = cut (age, age_cut, labels = age_labels),
-          speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
-  group_by(age_cat, speed_cat) 
-
-min_sample <- add_cat %>%
-  tally () %>%
-  pull (n) %>%
-  min()
-
-df_ankle_sub <- add_cat %>%
-  sample_n (min_sample)
-
-
-```
-
-
-### find optimal distribution
-
-```{r}
-
-m0 <- fitDist(val, data = df_ankle_sub, type = "realline")
-m0$fits
-
-
-saveRDS(m0, file.path(output_dir, "ankle_gamlss_m0.RDS"))
-```
-
-### explore models
-
-```{r}
-
-# tensor
-m1 <- gamlss(val ~  ga (~ te(cycle, age, speed)),
-             sigma.fo = ~ ga (~ te(cycle, age, speed)),
-             family = SHASH,
-             data = df_ankle_sub,
-             c.crit = 0.1,
-             trace = FALSE)
-
-saveRDS(m1, file.path(output_dir, "ankle_gamlss_m1.RDS"))
-
-m2 <- gamlss(val ~ ga (~ te(cycle, age, speed)),
-             family = SEP2,
-             data = df_ankle_sub,
-             c.crit = 0.1,
-             trace = FALSE)
-
-saveRDS(m2, file.path(output_dir, "ankle_gamlss_m2.RDS"))
-
-m3 <- gamlss(val ~ ga (~ te(cycle, age, speed)),
-             sigma.fo = ~ ga (~ te(cycle, age, speed)),
-             nu.fo = ~  ga (~ te(cycle, age, speed)) ,
-             #tau.fo = ~ ga (~ te(cycle, age, speed)) ,
-             family = SEP2,
-             data = df_ankle_sub,
-             c.crit = 0.1,
-             trace = FALSE)
-
-saveRDS(m3, file.path(output_dir, "ankle_gamlss_m3.RDS"))
-
-m4 <- gamlss(val ~ pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             family = SHASH,
-             data = df_ankle_sub,
-             c.crit = 0.1,
-             trace = FALSE)
-
-saveRDS(m4, file.path(output_dir, "ankle_gamlss_m4.RDS"))
-
-m5 <- gamlss(val ~ pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             sigma.fo = ~ pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             family = SHASH,
-             data = df_ankle_sub,
-             c.crit = 0.1,
-             trace = FALSE)
-
-saveRDS(m5, file.path(output_dir, "ankle_gamlss_m5.RDS"))
-
-m6 <- gamlss(val ~ sex + pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             sigma.fo = ~ pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             family = SHASH,
-             data = df_ankle_sub,
-             c.crit = 0.001,
-             trace = FALSE)
-
-saveRDS(m6, file.path(output_dir, "ankle_gamlss_m6.RDS"))
-
-m7 <- gamlss(val ~ sex + pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             sigma.fo = ~ pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             family = SHASH,
-             data = df_ankle_downsamp,
-             c.crit = 0.001,
-             trace = FALSE)
-
-saveRDS(m7, file.path(output_dir, "ankle_gamlss_m7.RDS"))
-
-
-```
-
-### try smoothing splines
-
-```{r}
-
-num_prm <- 0.01
-ord_prm <- 1
-
-m <- bigssa (val ~ sex+ cycle*speed*age,
-             type=list(sex = "nom", cycle = "per", age = "cub", speed ="cub"),
-             rparm=list(cycle = num_prm, speed = num_prm, age = num_prm, sex = ord_prm),
-             nknots=100,
-             data = df_ankle_downsamp,
-             skip.iter=T)
-
-s <- summary (m, fitresid = TRUE)
-
-plot (s$fitted.values, s$residuals)
-
-# plot results --------------------------
-
-
-plot_res <- function (model, cycle, age, speed) {
+  # funargs <- as.list(match.call())[-1]
+  # if(any(unlist(funargs)<3) & unlist(funargs)>0) 
+  #   return(do.call("replaceScore", lapply(funargs, function(x) pmax(3,x))))
   
-  newdata <- expand.grid(cycle = cycle,
-                       age = age,
-                       speed = speed)
+  k_cycle <- roundBelow3(k_cycle)
+  k_age <- roundBelow3(k_age)
+  k_speed <- roundBelow3(k_speed)
+  k_cycle_age_1 <- roundBelow3(k_cycle_age_1)
+  k_cycle_age_2 <- roundBelow3(k_cycle_age_2)
+  k_cycle_speed_1 <- roundBelow3(k_cycle_speed_1)
+  k_cycle_speed_2 <- roundBelow3(k_cycle_speed_2)
+  k_age_speed_1 <- roundBelow3(k_age_speed_1)
+  k_age_speed_2 <- roundBelow3(k_age_speed_2)
+  k_cycle_age_speed_1 <- roundBelow3(k_cycle_age_speed_1)
+  k_cycle_age_speed_2 <- roundBelow3(k_cycle_age_speed_2)
+  k_cycle_age_speed_3 <- roundBelow3(k_cycle_age_speed_3)
+  k_cycle_ht_1 <- roundBelow3(k_cycle_ht_1)
+  k_cycle_ht_2 <- roundBelow3(k_cycle_ht_2)
+  k_ht <- roundBelow3(k_ht)
+  k_strlen <- roundBelow3(k_strlen)
+  k_cycle_strlen_1 <- roundBelow3(k_cycle_strlen_1)
+  k_cycle_strlen_2 <- roundBelow3(k_cycle_strlen_2)
+  # k_cycle_re <- roundBelow3(k_cycle_re)
   
-  yhat = predict(model,
-               newdata = newdata,
-               se.fit=TRUE,
-               include= c("age", "cycle", "speed"),
-               includeint=T)
+  bs <-  "cr"
   
-  yhat_df <- bind_rows(yhat) %>%
-    bind_cols(newdata) %>%
-    mutate (lwr = fit - 2*se.fit,
-            upr = fit + 2*se.fit)
+  form <-  paste0("val ~ ",
+                  "ti (cycle, k = k_cycle, bs = bs) + ",
+                  "ti (age, k = k_age, bs = bs) + ",
+                  "ti (speed, k = k_speed, bs = bs) + ",
+                  "ti(ht, k = k_ht, bs = bs) + ",
+                  "ti(strlen, k = k_strlen, bs = bs) + ",
+                  "sex ")
   
-  zlist <- list (yhat = yhat_df ,
-                 z = matrix (yhat_df[, "fit"] %>% pull(), nrow = length (cycle), ncol = length (age)),
-                 z_lwr = matrix (yhat_df[, "lwr"] %>% pull(), nrow = length (cycle), ncol = length (age)),
-                 z_upr = matrix (yhat_df[, "upr"] %>% pull(), nrow = length (cycle), ncol = length (age))
-                 )
+  if(all(c(k_cycle_age_1, 
+           k_cycle_age_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, age, k = c(k_cycle_age_1, k_cycle_age_2), bs = bs)")
+  if(all(c(k_cycle_speed_1, 
+           k_cycle_speed_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, speed, k = c(k_cycle_speed_1, k_cycle_speed_2),  bs = bs)")
+  if(all(c(k_age_speed_1, 
+           k_age_speed_2)>0))
+    form <- paste0(form, 
+                   "+ ti (age, speed,  k = c(k_age_speed_1, k_age_speed_2),  bs = bs)")
+  if(all(c(
+    k_cycle_age_1, 
+    k_cycle_age_2,
+    k_cycle_speed_1, 
+    k_cycle_speed_2,
+    k_age_speed_1, 
+    k_age_speed_2,
+    k_cycle_age_speed_1, 
+    k_cycle_age_speed_2,
+    k_cycle_age_speed_3)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, speed, age,  k = c(k_cycle_age_speed_1, k_cycle_age_speed_2,",
+                   " k_cycle_age_speed_3), bs = bs)"
+    )
+  if(all(c(k_cycle_ht_1, 
+           k_cycle_ht_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, ht, k = c(k_cycle_ht_1, k_cycle_ht_2), bs = bs)")
+  if(all(c(k_cycle_strlen_1, 
+           k_cycle_strlen_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, strlen, k = c(k_cycle_strlen_1, k_cycle_strlen_1), bs = bs)")
+  # if(k_cycle_re>0)
+  #   form <- paste0(form, 
+  #                  "+ ti (cycle, k = k_cycle_re, by = study, bs = 're')")
   
-  return (zlist)
+  form <- as.formula(form)
   
+  pr <- try({
+    
+    mod <- bam (form,
+                data = train,
+                discrete = TRUE,
+                family = scat()
+    )
+    
+    predict(mod, newdata = test)#, exclude = "s(subj)")
+    
+  })
+  
+  if(class(pr)=="try-error") score <- NA else{
+    
+    test$pr <- pr
+    predMat <- test %>% dplyr::select(-val) %>% spread(cycle, pr) %>% 
+      dplyr::select(`21`:`69`) %>% as.matrix()
+    score <- -mean(relRMSE(trueMat, predMat), na.rm=T)
+    
+  
+  }
+    
+  return(list(Score = score))
 }
 
-cycle <- 1:101
-age <- 5:85
-slow <- 0.7
-mod <- 1.2
-fast <- 1.8
+replaceScore <- scoringFunction
 
-surface_slow <- plot_res(model = m, cycle = cycle, age = age, speed = slow)
-surface_mod <- plot_res(model = m, cycle = cycle, age = age, speed = mod)
-surface_fast <- plot_res(model = m, cycle = cycle, age = age, speed = fast)
+bounds <- list( 
+  k_cycle = c(5L,25L), 
+  k_age = c(5L,20L),
+  k_speed = c(5L,20L),
+  k_cycle_age_1 = c(0L,25L),
+  k_cycle_age_2 = c(0L,20L),
+  k_cycle_speed_1 = c(0L,25L),
+  k_cycle_speed_2 = c(0L,6L),
+  k_age_speed_1 = c(0L,20L),
+  k_age_speed_2 = c(0L,6L),
+  k_cycle_age_speed_1 = c(0L,15L),
+  k_cycle_age_speed_2 = c(0L,10L),
+  k_cycle_age_speed_3 = c(0L,6L),
+  k_cycle_ht_1 = c(0L,25L),
+  k_cycle_ht_2 = c(0L,15L),
+  k_cycle_strlen_1 = c(0L,15L),
+  k_cycle_strlen_2 = c(0L,15L),
+  k_ht = c(5L,15L),
+  k_strlen = c(5L, 20L)#,
+  # k_cycle_re = c(5L,25L)
+)
 
-f_slow <- plot_ly(showscale = FALSE, scene='scene1') %>%
-  add_surface(z = ~ surface_slow$z) %>%
-  add_surface(z = ~ surface_slow$z_lwr, opacity = 0.5) %>%
-  add_surface(z = ~ surface_slow$z_upr, opacity = 0.5) 
 
-f_mod<- plot_ly(showscale = FALSE, scene='scene2') %>%
-  add_surface(z = ~ surface_mod$z) %>%
-  add_surface(z = ~ surface_mod$z_lwr, opacity = 0.5) %>%
-  add_surface(z = ~ surface_mod$z_upr, opacity = 0.5)
+# Start BO ------------------------------------------------------------------------
 
+nrClusters <- 30
+nrEpochs <- 10
 
-f_fast <- plot_ly(showscale = FALSE, scene = "scene3") %>%
-  add_surface(z = ~ surface_fast$z) %>%
-  add_surface(z = ~ surface_fast$z_lwr, opacity = 0.5) %>%
-  add_surface(z = ~ surface_fast$z_upr, opacity = 0.5) 
+library(doParallel)
+cl <- makeCluster(nrClusters)
+registerDoParallel(cl)
+clusterExport(cl,c('train','test','trueMat','relRMSE', 'RMSE', 'integrate_fun', 'roundBelow3'))
+clusterEvalQ(cl,expr= {
+  library(mgcv)
+  library(tidyr)
+  library(dplyr)
+})
 
-f <- subplot(f_slow, f_mod, f_fast, shareX = TRUE, shareY = TRUE) %>%
-  layout (title = "ankle power over age",
-          scene1 = list(
-      xaxis = list(title = "Age (yo)", range = c(85,5)),
-      yaxis = list(title = "Cycle (1 - 100%"),
-      zaxis = list(title = "Power (W/kg)")))
-      
+set.seed(42)
+
+tWithPar <- system.time(
+  optObj <- bayesOpt(
+    FUN = scoringFunction,
+    bounds = bounds,
+    initPoints = nrClusters,
+    iters.n = nrClusters * nrEpochs,
+    iters.k = nrClusters,
+    parallel = TRUE,
+    verbose = 2,
+    errorHandling = "continue"
+  )
+)
+stopCluster(cl)
+registerDoSEQ()
+
+saveRDS(optObj, file="output/BO_ankle.RDS")
+print(tWithPar)
+
+getBestPars(optObj)
 ```
 
-
-## knee
-
-### Sample the data
+### Knee
 
 ```{r}
+# Load data --------------------------------------------------------------------
 
-df_knee_downsamp <- df_knee %>%
-  filter (cycle %in% seq (1, 101, 3))
+data <- readRDS("output/knee_splitted.RDS")
+train <- do.call("rbind", data[c(1,3)])
+test <- data[[2]]
+test <- test %>% arrange(subj, cycle)
+# create true functional matrix
+# with 49 observations, 1 row = 1 subject
+trueMat <- test %>% spread(cycle, val) %>% dplyr::select(`1`:`101`) %>% as.matrix()
+# does not look too good though (?)
+matplot(t(trueMat), type="l", col = 
+          test %>% 
+          filter(cycle==21) %>% 
+          pull(study) %>% as.numeric)
 
-add_cat <-  df_knee_downsamp %>%
-  mutate (age_cat  = cut (age, age_cut, labels = age_labels),
-          speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
-  group_by(age_cat, speed_cat) 
+rm(data)
 
-min_sample <- add_cat %>%
-  tally () %>%
-  pull (n) %>%
-  min()
+# Define objective function ----------------------------------------------------
 
-df_knee_sub <- add_cat %>%
-  sample_n (min_sample)
+scoringFunction <- function(
+  k_cycle, 
+  k_age,
+  k_speed,
+  k_cycle_age_1,
+  k_cycle_age_2,
+  k_cycle_speed_1,
+  k_cycle_speed_2,
+  k_age_speed_1,
+  k_age_speed_2,
+  k_cycle_age_speed_1,
+  k_cycle_age_speed_2,
+  k_cycle_age_speed_3,
+  k_cycle_ht_1,
+  k_cycle_ht_2,
+  k_ht,
+  k_strlen,
+  k_cycle_strlen_1,
+  k_cycle_strlen_2,
+  # k_cycle_re,
+  cycle_age
+) {
+  
+  # funargs <- as.list(match.call())[-1]
+  # if(any(unlist(funargs)<3 & unlist(funargs)>0)) 
+  #   return(do.call("replaceScore", lapply(funargs, function(x) pmax(3,x))))
+  
+  k_cycle <- roundBelow3(k_cycle)
+  k_age <- roundBelow3(k_age)
+  k_speed <- roundBelow3(k_speed)
+  k_cycle_age_1 <- roundBelow3(k_cycle_age_1)
+  k_cycle_age_2 <- roundBelow3(k_cycle_age_2)
+  k_cycle_speed_1 <- roundBelow3(k_cycle_speed_1)
+  k_cycle_speed_2 <- roundBelow3(k_cycle_speed_2)
+  k_age_speed_1 <- roundBelow3(k_age_speed_1)
+  k_age_speed_2 <- roundBelow3(k_age_speed_2)
+  k_cycle_age_speed_1 <- roundBelow3(k_cycle_age_speed_1)
+  k_cycle_age_speed_2 <- roundBelow3(k_cycle_age_speed_2)
+  k_cycle_age_speed_3 <- roundBelow3(k_cycle_age_speed_3)
+  k_cycle_ht_1 <- roundBelow3(k_cycle_ht_1)
+  k_cycle_ht_2 <- roundBelow3(k_cycle_ht_2)
+  k_ht <- roundBelow3(k_ht)
+  k_strlen <- roundBelow3(k_strlen)
+  k_cycle_strlen_1 <- roundBelow3(k_cycle_strlen_1)
+  k_cycle_strlen_2 <- roundBelow3(k_cycle_strlen_2)
+  # k_cycle_re <- roundBelow3(k_cycle_re)
+  
+  bs <-  "cr"
+  
+  form <-  paste0("val ~ ",
+                  "ti (cycle, k = k_cycle, bs = bs) + ",
+                  "ti (age, k = k_age, bs = bs) + ",
+                  "ti (speed, k = k_speed, bs = bs) + ",
+                  "ti(ht, k = k_ht, bs = bs) + ",
+                  "ti(strlen, k = k_strlen, bs = bs) + ",
+                  "sex ")
+  
+  if(all(c(k_cycle_age_1, 
+           k_cycle_age_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, age, k = c(k_cycle_age_1, k_cycle_age_2), bs = bs)")
+  if(all(c(k_cycle_speed_1, 
+           k_cycle_speed_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, speed, k = c(k_cycle_speed_1, k_cycle_speed_2),  bs = bs)")
+  if(all(c(k_age_speed_1, 
+           k_age_speed_2)>0))
+    form <- paste0(form, 
+                   "+ ti (age, speed,  k = c(k_age_speed_1, k_age_speed_2),  bs = bs)")
+  if(all(c(
+    k_cycle_age_1, 
+    k_cycle_age_2,
+    k_cycle_speed_1, 
+    k_cycle_speed_2,
+    k_age_speed_1, 
+    k_age_speed_2,
+    k_cycle_age_speed_1, 
+    k_cycle_age_speed_2,
+    k_cycle_age_speed_3)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, speed, age,  k = c(k_cycle_age_speed_1, k_cycle_age_speed_2, k_cycle_age_speed_3), bs = bs)"
+    )
+  if(all(c(k_cycle_ht_1, 
+           k_cycle_ht_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, ht, k = c(k_cycle_ht_1, k_cycle_ht_2), bs = bs)")
+  if(all(c(k_cycle_strlen_1, 
+           k_cycle_strlen_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, strlen, k = c(k_cycle_strlen_1, k_cycle_strlen_1), bs = bs)")
+  # if(k_cycle_re>0)
+  #   form <- paste0(form, 
+  #                  "+ ti (cycle, k = k_cycle_re, by = study, bs = 're')")
+  
+  form <- as.formula(form)
+  
+  pr <- try({
+    
+    mod <- bam (form,
+                data = train,
+                discrete = TRUE,
+                family = scat()
+    )
+    
+    predict(mod, newdata = test)#, exclude = "s(subj)")
+    
+  })
+  
+  if(class(pr)=="try-error") score <- NA else{
+    
+    test$pr <- pr
+    predMat <- test %>% dplyr::select(-val) %>% spread(cycle, pr) %>% dplyr::select(`1`:`101`) %>% as.matrix()
+    score <- -mean(relRMSE(trueMat, predMat), na.rm=T)
+    
+    
+  }
+  
+  return(list(Score = score))
+}
 
+replaceScore <- scoringFunction
+
+bounds <- list( 
+  k_cycle = c(5L,25L), 
+  k_age = c(5L,20L),
+  k_speed = c(5L,20L),
+  k_cycle_age_1 = c(0L,25L),
+  k_cycle_age_2 = c(0L,20L),
+  k_cycle_speed_1 = c(0L,25L),
+  k_cycle_speed_2 = c(0L,6L),
+  k_age_speed_1 = c(0L,20L),
+  k_age_speed_2 = c(0L,6L),
+  k_cycle_age_speed_1 = c(0L,15L),
+  k_cycle_age_speed_2 = c(0L,10L),
+  k_cycle_age_speed_3 = c(0L,6L),
+  k_cycle_ht_1 = c(0L,25L),
+  k_cycle_ht_2 = c(0L,15L),
+  k_cycle_strlen_1 = c(0L,15L),
+  k_cycle_strlen_2 = c(0L,15L),
+  k_ht = c(5L,15L),
+  k_strlen = c(5L, 20L)#,
+  # k_cycle_re = c(5L,25L)
+)
+
+
+# Start BO ------------------------------------------------------------------------
+
+nrClusters <- 30
+nrEpochs <- 10
+
+library(doParallel)
+cl <- makeCluster(nrClusters)
+registerDoParallel(cl)
+clusterExport(cl,c('train','test','trueMat','relRMSE', 'RMSE', 'integrate_fun', 'roundBelow3'))
+clusterEvalQ(cl,expr= {
+  library(mgcv)
+  library(tidyr)
+  library(dplyr)
+})
+
+set.seed(42)
+
+tWithPar <- system.time(
+  optObj <- bayesOpt(
+    FUN = scoringFunction,
+    bounds = bounds,
+    initPoints = nrClusters,
+    iters.n = nrClusters * nrEpochs,
+    iters.k = nrClusters,
+    parallel = TRUE,
+    verbose = 2,
+    errorHandling = "continue"
+  )
+)
+stopCluster(cl)
+registerDoSEQ()
+
+saveRDS(optObj, file="output/BO_knee.RDS")
+print(tWithPar)
+
+getBestPars(optObj)
+```
+
+### Hip
+
+```{r}
+# Load data --------------------------------------------------------------------
+
+data <- readRDS("output/hip_splitted.RDS")
+train <- do.call("rbind", data[c(1,3)])
+test <- data[[2]]
+test <- test %>% arrange(subj, cycle)
+# create true functional matrix
+# with 49 observations, 1 row = 1 subject
+trueMat <- test %>% spread(cycle, val) %>% dplyr::select(`1`:`101`) %>% as.matrix()
+# does not look too good though (?)
+matplot(t(trueMat), type="l", col = 
+          test %>% 
+          filter(cycle==21) %>% 
+          pull(study) %>% as.numeric)
+rm(data)
+
+# Define objective function ----------------------------------------------------
+
+scoringFunction <- function(
+  k_cycle, 
+  k_age,
+  k_speed,
+  k_cycle_age_1,
+  k_cycle_age_2,
+  k_cycle_speed_1,
+  k_cycle_speed_2,
+  k_age_speed_1,
+  k_age_speed_2,
+  k_cycle_age_speed_1,
+  k_cycle_age_speed_2,
+  k_cycle_age_speed_3,
+  k_cycle_ht_1,
+  k_cycle_ht_2,
+  k_ht,
+  k_strlen,
+  k_cycle_strlen_1,
+  k_cycle_strlen_2,
+  # k_cycle_re,
+  cycle_age
+) {
+  
+  # funargs <- as.list(match.call())[-1]
+  # if(any(unlist(funargs)<3) & unlist(funargs)>0) 
+  #   return(do.call("replaceScore", lapply(funargs, function(x) pmax(3,x))))
+  
+  k_cycle <- roundBelow3(k_cycle)
+  k_age <- roundBelow3(k_age)
+  k_speed <- roundBelow3(k_speed)
+  k_cycle_age_1 <- roundBelow3(k_cycle_age_1)
+  k_cycle_age_2 <- roundBelow3(k_cycle_age_2)
+  k_cycle_speed_1 <- roundBelow3(k_cycle_speed_1)
+  k_cycle_speed_2 <- roundBelow3(k_cycle_speed_2)
+  k_age_speed_1 <- roundBelow3(k_age_speed_1)
+  k_age_speed_2 <- roundBelow3(k_age_speed_2)
+  k_cycle_age_speed_1 <- roundBelow3(k_cycle_age_speed_1)
+  k_cycle_age_speed_2 <- roundBelow3(k_cycle_age_speed_2)
+  k_cycle_age_speed_3 <- roundBelow3(k_cycle_age_speed_3)
+  k_cycle_ht_1 <- roundBelow3(k_cycle_ht_1)
+  k_cycle_ht_2 <- roundBelow3(k_cycle_ht_2)
+  k_ht <- roundBelow3(k_ht)
+  k_strlen <- roundBelow3(k_strlen)
+  k_cycle_strlen_1 <- roundBelow3(k_cycle_strlen_1)
+  k_cycle_strlen_2 <- roundBelow3(k_cycle_strlen_2)
+  # k_cycle_re <- roundBelow3(k_cycle_re)
+  
+  bs <-  "cr"
+  
+  form <-  paste0("val ~ ",
+                  "ti (cycle, k = k_cycle, bs = bs) + ",
+                  "ti (age, k = k_age, bs = bs) + ",
+                  "ti (speed, k = k_speed, bs = bs) + ",
+                  "ti(ht, k = k_ht, bs = bs) + ",
+                  "ti(strlen, k = k_strlen, bs = bs) + ",
+                  "sex ")
+  
+  if(all(c(k_cycle_age_1, 
+           k_cycle_age_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, age, k = c(k_cycle_age_1, k_cycle_age_2), bs = bs)")
+  if(all(c(k_cycle_speed_1, 
+           k_cycle_speed_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, speed, k = c(k_cycle_speed_1, k_cycle_speed_2),  bs = bs)")
+  if(all(c(k_age_speed_1, 
+           k_age_speed_2)>0))
+    form <- paste0(form, 
+                   "+ ti (age, speed,  k = c(k_age_speed_1, k_age_speed_2),  bs = bs)")
+  if(all(c(
+    k_cycle_age_1, 
+    k_cycle_age_2,
+    k_cycle_speed_1, 
+    k_cycle_speed_2,
+    k_age_speed_1, 
+    k_age_speed_2,
+    k_cycle_age_speed_1, 
+    k_cycle_age_speed_2,
+    k_cycle_age_speed_3)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, speed, age,  k = c(k_cycle_age_speed_1, k_cycle_age_speed_2, k_cycle_age_speed_3), bs = bs)"
+    )
+  if(all(c(k_cycle_ht_1, 
+           k_cycle_ht_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, ht, k = c(k_cycle_ht_1, k_cycle_ht_2), bs = bs)")
+  if(all(c(k_cycle_strlen_1, 
+           k_cycle_strlen_2)>0))
+    form <- paste0(form, 
+                   "+ ti (cycle, strlen, k = c(k_cycle_strlen_1, k_cycle_strlen_1), bs = bs)")
+  # if(k_cycle_re>0)
+  #   form <- paste0(form, 
+  #                  "+ ti (cycle, k = k_cycle_re, by = study, bs = 're')")
+  
+  form <- as.formula(form)
+  
+  pr <- try({
+    
+    mod <- bam (form,
+                data = train,
+                discrete = TRUE,
+                family = scat()
+    )
+    
+    predict(mod, newdata = test)#, exclude = "s(subj)")
+    
+  })
+  
+  if(class(pr)=="try-error") score <- NA else{
+    
+    test$pr <- pr
+    predMat <- test %>% dplyr::select(-val) %>% spread(cycle, pr) %>% dplyr::select(`1`:`101`) %>% as.matrix()
+    score <- -mean(relRMSE(trueMat, predMat), na.rm=T)
+    
+    
+  }
+  
+  return(list(Score = score))
+}
+
+replaceScore <- scoringFunction
+
+bounds <- list( 
+  k_cycle = c(5L,25L), 
+  k_age = c(5L,20L),
+  k_speed = c(5L,20L),
+  k_cycle_age_1 = c(0L,25L),
+  k_cycle_age_2 = c(0L,20L),
+  k_cycle_speed_1 = c(0L,25L),
+  k_cycle_speed_2 = c(0L,6L),
+  k_age_speed_1 = c(0L,20L),
+  k_age_speed_2 = c(0L,6L),
+  k_cycle_age_speed_1 = c(0L,15L),
+  k_cycle_age_speed_2 = c(0L,10L),
+  k_cycle_age_speed_3 = c(0L,6L),
+  k_cycle_ht_1 = c(0L,25L),
+  k_cycle_ht_2 = c(0L,15L),
+  k_cycle_strlen_1 = c(0L,15L),
+  k_cycle_strlen_2 = c(0L,15L),
+  k_ht = c(5L,15L),
+  k_strlen = c(5L, 20L)#,
+  #k_cycle_re = c(5L,25L)
+)
+
+# Start BO ------------------------------------------------------------------------
+
+nrClusters <- 30
+nrEpochs <- 10
+
+library(doParallel)
+cl <- makeCluster(nrClusters)
+registerDoParallel(cl)
+clusterExport(cl,c('train','test','trueMat','relRMSE', 'RMSE', 'integrate_fun', 'roundBelow3'))
+clusterEvalQ(cl,expr= {
+  library(mgcv)
+  library(tidyr)
+  library(dplyr)
+})
+
+set.seed(42)
+
+tWithPar <- system.time(
+  optObj <- bayesOpt(
+    FUN = scoringFunction,
+    bounds = bounds,
+    initPoints = nrClusters,
+    iters.n = nrClusters * nrEpochs,
+    iters.k = nrClusters,
+    parallel = TRUE,
+    verbose = 2,
+    errorHandling = "continue"
+  )
+)
+stopCluster(cl)
+registerDoSEQ()
 
 ```
 
+## Tune distribution family
 
-### find optimal distribution
-
-```{r}
-
-m0 <- fitDist(val, data = df_knee_sub, type = "realline")
-m0$fits
-
-
-saveRDS(m0, file.path(output_dir, "knee_gamlss_m0.RDS"))
-```
-
-### explore models
+### Ankle
 
 ```{r}
-
-
-m1 <- gamlss(val ~  ga (~ te(cycle, age, speed)),
-             sigma.fo = ~ ga (~ te(cycle, age, speed)),
-             family = SEP1,
-             data = df_knee_sub,
-             c.crit = 0.1,
-             trace = FALSE)
-
-saveRDS(m1, file.path(output_dir, "knee_gamlss_m1.RDS"))
-
-
-m2 <- gamlss(val ~ pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             family = SEP1,
-             data = df_knee_sub,
-             c.crit = 0.1,
-             trace = FALSE)
-
-saveRDS(m2, file.path(output_dir, "knee_gamlss_m2.RDS"))
-
-
-m3 <- gamlss(val ~ sex + pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             family = SEP1,
-             data = df_knee_downsamp,
-             c.crit = 0.001,
-             trace = FALSE)
-
-saveRDS(m3, file.path(output_dir, "knee_gamlss_m3.RDS"))
-
-
-```
-
-## hip
-
-### Sample the data
-
-```{r}
-
-df_hip_downsamp <- df_hip %>%
-  filter (cycle %in% seq (1, 101, 3))
-
-add_cat <-  df_hip_downsamp %>%
-  mutate (age_cat  = cut (age, age_cut, labels = age_labels),
-          speed_cat  = cut (speed, speed_cut, labels = speed_labels)) %>%
-  group_by(age_cat, speed_cat) 
-
-min_sample <- add_cat %>%
-  tally () %>%
-  pull (n) %>%
-  min()
-
-df_hip_sub <- add_cat %>%
-  sample_n (min_sample)
-
-
-```
-
-
-### find optimal distribution
-
-```{r}
-
-m0 <- fitDist(val, data = df_hip_sub, type = "realline")
-m0$fits
-
-
-saveRDS(m0, file.path(output_dir, "hip_gamlss_m0.RDS"))
-```
-
-### explore models
-
-```{r}
-
-
-m1 <- gamlss(val ~  ga (~ te(cycle, age, speed)),
-             sigma.fo = ~ ga (~ te(cycle, age, speed)),
-             family = SHASH,
-             data = df_hip_sub,
-             c.crit = 0.1,
-             trace = FALSE)
-
-saveRDS(m1, file.path(output_dir, "hip_gamlss_m1.RDS"))
-
-
-m2 <- gamlss(val ~ pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             family = SEP1,
-             data = df_hip_sub,
-             c.crit = 0.1,
-             trace = FALSE)
-
-saveRDS(m2, file.path(output_dir, "hip_gamlss_m2.RDS"))
-
-m3 <- gamlss(val ~ pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             sigma.fo = ~ pb (cycle) + pb (age) + pb(speed) + 
-               pvc (cycle, by = age) + pvc(cycle, by = speed) + pvc(speed, by = age),
-             family = SEP1,
-             data = df_hip_sub,
-             c.crit = 0.1,
-             trace = FALSE)
-
-saveRDS(m3, file.path(output_dir, "hip_gamlss_m3.RDS"))
-
-m4 <- gamlss(val ~  ga (~ te(cycle, age, speed)),
-             sigma.fo = ~ ga (~ te(cycle, age, speed)),
-             family = SHASH,
-             data = df_hip_downsamp,
-             c.crit = 0.001,
-             trace = FALSE)
-saveRDS(m4, file.path(output_dir, "hip_gamlss_m4.RDS"))
-
-
-```
-
-### GAMLSS with time interaction, REs and data-driven distribution choice
-
-```{r}
-form_right = paste(c("~ ba (~ te(cycle, speed)",
-                     "te(cycle, age)",
-                     "te(age, speed)", 
-                     "s(subj, by = study, bs = 're')",
-                     "s(study, bs = 're')",
-                     "sex",
-                     "s(wt) + s(ht))"),
-                   collapse = " + ")
-form_right2 = "~ ba( ~ s(cycle))"
-
-
 
 fams <- c(
   "NO", "GU", "RG" ,"LO", "NET", "TF", "TF2", "PE","PE2", 
@@ -522,142 +661,322 @@ fams <- c(
   "ST1", "ST2", "ST3", "ST4", "ST5", "SST", "GT"
 )
 
-models <- mclapply(fams, function(fam)
-  m1 <- try(gamlss(as.formula(paste0("val ", form_right)),
-               sigma.fo = as.formula(form_right2),
-               family = fam,
-               data = df_ankle,
-               trace = FALSE)),
-  mc.cores = 29
-)
+# check suitable distributions
 
-saveRDS(models, file.path(output_dir, "ankle_gamlss_models.RDS"))
-rm(models)
-gc()
+## ankle
+data <- readRDS("output/ankle_splitted.RDS")
+train <- do.call("rbind", data[c(1,3)])
+test <- data[[2]]
+test <- test %>% arrange(subj, cycle)
+trueMat <- test %>% spread(cycle, val) %>% dplyr::select(`21`:`69`) %>% as.matrix()
 
+bo_ankle <- readRDS("output/BO_ankle.RDS")
+df_bo_ankle <- bo_ankle$scoreSummary %>% 
+  # drop the ones that did not work
+  filter(Score > -100) %>% 
+  mutate(Score = -Score) %>% 
+  filter(Score < 0.25)
 
-models <- mclapply(fams, function(fam)
-  m1 <- try(gamlss(as.formula(paste0("val ", form_right)),
-               sigma.fo = as.formula(form_right2),
-               family = fam,
-               data = df_knee,
-               trace = FALSE)),
-  mc.cores = 29
-)
+best_setting <- df_bo_ankle %>% 
+  arrange(Score) %>% 
+  dplyr::select(k_cycle:Score) %>%  
+  dplyr::select(k_cycle:k_strlen) %>% 
+  head(1) %>% c()
 
-saveRDS(models, file.path(output_dir, "knee_gamlss_models.RDS"))
+form <- do.call(settings_to_formula, best_setting)
 
-rm(models)
-gc()
+form <- as.formula(paste0("val ~ ba(", form, ")"))
 
-models <- mclapply(fams, function(fam)
-  m1 <- try(gamlss(as.formula(paste0("val ", form_right)),
-               sigma.fo = as.formula(form_right2),
-               family = fam,
-               data = df_hip,
-               trace = FALSE)),
-  mc.cores = 29
-)
+form.sigma <- ~ ba( ~ ti(cycle, bs = "cr", k = 20))
 
-saveRDS(models, file.path(output_dir, "hip_gamlss_models.RDS"))
+res <- mclapply(fams, function(fam){
+  
+  mod <- gamlss(form, 
+                sigma.formula = form.sigma,
+                family = fam,
+                discrete = TRUE,
+                data = train,
+                n.cyc = 200,
+                trace = TRUE)
+  
+  pr <- predict(mod, newdata = test, what = "mu")
+  test$pr <- pr
+  predMat <- test %>% dplyr::select(-val) %>% spread(cycle, pr) %>% dplyr::select(`21`:`69`) %>% as.matrix()
+  score <- mean(relRMSE(trueMat, predMat), na.rm=T)
+  
+  return(score)
+  
+}, mc.cores = length(fams))
 
-dev_knee <- sapply(readRDS(file.path(output_dir, "knee_gamlss_models.RDS")), "[", "G.deviance")
-dev_ankle <- sapply(readRDS(file.path(output_dir, "ankle_gamlss_models.RDS")), "[", "G.deviance")
-dev_hip <- sapply(readRDS(file.path(output_dir, "hip_gamlss_models.RDS")), "[", "G.deviance")
+saveRDS(res, "output/dist_comparison_ankle.RDS")
 
-res <- data.frame(
-  distribution = fams,
-  knee = unlist(dev_knee),
-  ankle = unlist(dev_ankle),
-  hip = unlist(dev_hip)
-)
-
-saveRDS(res, file.path(output_dir, "final_result.RDS"))
-
-best_model_knee <- gamlss(as.formula(paste0("val ", form_right)),
-                          sigma.fo = as.formula(form_right2),
-                          family = "SST",
-                          data = df_knee,
-                          trace = FALSE)
-
-saveRDS(best_model_knee, file.path(output_dir, "best_model_knee.RDS"))
-
-best_model_ankle <- gamlss(as.formula(paste0("val ", form_right)),
-                         sigma.fo = as.formula(form_right2),
-                         family = "NET",
-                         data = df_ankle,
-                         trace = FALSE)
-
-saveRDS(best_model_ankle, file.path(output_dir, "best_model_ankle.RDS"))
-
-best_model_hip <- gamlss(as.formula(paste0("val ", form_right)),
-                         sigma.fo = as.formula(form_right2),
-                         family = "EGB2",
-                         data = df_hip,
-                         trace = FALSE)
-
-saveRDS(best_model_hip, file.path(output_dir, "best_model_hip.RDS"))
+data.frame(family = fams, score = as.numeric(unlist(res))) %>% arrange(score)
 
 ```
 
-### GAMLSS with mgcv
+### Knee
 
 ```{r}
-m1 <- gam(list(
-  val  ~ 
-    te(cycle, speed) + 
-    te(cycle, age) + 
-    te(age, speed) + 
-    s(subj, by = study, bs = "re") + 
-    s(study, bs = "re") + 
-    sex + 
-    s(wt) + s(ht),
-  ~s(cycle)),
-  family = gaulss(),
-  data = df_ankle)
+
+fams <- c(
+  "NO", "GU", "RG" ,"LO", "NET", "TF", "TF2", "PE","PE2", 
+  "SN1", "SN2", "exGAUS", "SHASH", "SHASHo","SHASHo2", 
+  "EGB2", "JSU", "JSUo", "SEP1", "SEP2", "SEP3", "SEP4", 
+  "ST1", "ST2", "ST3", "ST4", "ST5", "SST", "GT"
+)
+
+# check suitable distributions
+
+## knee
+data <- readRDS("output/knee_splitted.RDS")
+train <- do.call("rbind", data[c(1,3)])
+test <- data[[2]]
+test <- test %>% arrange(subj, cycle)
+trueMat <- test %>% spread(cycle, val) %>% dplyr::select(`1`:`101`) %>% as.matrix()
+
+bo_knee <- readRDS("output/BO_knee.RDS")
+df_bo_knee <- bo_knee$scoreSummary %>% 
+  # drop the ones that did not work
+  filter(Score > -100) %>% 
+  mutate(Score = -Score) %>% 
+  filter(Score < 0.25)
+
+best_setting <- df_bo_knee %>% 
+  arrange(Score) %>% 
+  dplyr::select(k_cycle:Score) %>%  
+  dplyr::select(k_cycle:k_strlen) %>% 
+  head(1) %>% c()
+
+form <- do.call(settings_to_formula, best_setting)
+
+form <- as.formula(paste0("val ~ ba(", form, ")"))
+
+form.sigma <- ~ ba( ~ ti(cycle, bs = "cr", k = 20))
+
+res <- mclapply(fams, function(fam){
   
+  mod <- gamlss(form, 
+                sigma.formula = form.sigma,
+                family = fam,
+                discrete = TRUE,
+                data = train,
+                n.cyc = 200,
+                trace = TRUE)
+  
+  pr <- predict(mod, newdata = test, what = "mu")
+  test$pr <- pr
+  predMat <- test %>% dplyr::select(-val) %>% spread(cycle, pr) %>% dplyr::select(`1`:`101`) %>% as.matrix()
+  score <- mean(relRMSE(trueMat, predMat), na.rm=T)
+  
+  return(score)
+  
+}, mc.cores = length(fams))
+
+saveRDS(res, "output/dist_comparison_knee.RDS")
+
+data.frame(family = fams, score = as.numeric(unlist(res))) %>% arrange(score)
 ```
 
-### GAMLSS with bamlss
+### Hip
 
 ```{r}
 fams <- c(
-   "NO", "GU", "RG" ,"LO", "NET", "TF", "TF2", "PE","PE2", 
-   "SN1", "SN2", "exGAUS", "SHASH", "SHASHo","SHASHo2", 
-   "EGB2", "JSU", "JSUo", "SEP1", "SEP2", "SEP3", "SEP4", 
-   "ST1", "ST2", "ST3", "ST4", "ST5", "SST", "GT"
+  "NO", "GU", "RG" ,"LO", "NET", "TF", "TF2", "PE","PE2", 
+  "SN1", "SN2", "exGAUS", "SHASH", "SHASHo","SHASHo2", 
+  "EGB2", "JSU", "JSUo", "SEP1", "SEP2", "SEP3", "SEP4", 
+  "ST1", "ST2", "ST3", "ST4", "ST5", "SST", "GT"
 )
 
-models <- vector("list", length(fams))
+# check suitable distributions
 
-models <- mclapply(fams, function(fam)
-  eval(parse(text = 
-               paste0("bamlss(list(
-    val ~ 
-      te(cycle, speed) + 
-      te(cycle, age) + 
-      te(age, speed) + 
-      s(subj, bs = 're') + 
-      sex + 
-      s(ht),
-    sigma ~ s(cycle)),
-    family = ",  
-  fam, ", optimizer = boost,
-    data = df_ankle)"))),
-  mc.cores = 29
-)
+## hip
+data <- readRDS("output/hip_splitted.RDS")
+train <- do.call("rbind", data[c(1,3)])
+test <- data[[2]]
+test <- test %>% arrange(subj, cycle)
+trueMat <- test %>% spread(cycle, val) %>% dplyr::select(`1`:`101`) %>% as.matrix()
+
+bo_hip <- readRDS("output/BO_hip.RDS")
+df_bo_hip <- bo_hip$scoreSummary %>% 
+  # drop the ones that did not work
+  filter(Score > -100) %>% 
+  mutate(Score = -Score) %>% 
+  filter(Score < 0.25)
+
+best_setting <- df_bo_hip %>% 
+  arrange(Score) %>% 
+  dplyr::select(k_cycle:Score) %>%  
+  dplyr::select(k_cycle:k_strlen) %>% 
+  head(1) %>% c()
+
+form <- do.call(settings_to_formula, best_setting)
+
+form <- as.formula(paste0("val ~ ba(", form, ")"))
+
+form.sigma <- ~ ba( ~ ti(cycle, bs = "cr", k = 20))
+
+res <- mclapply(fams, function(fam){
+  
+  mod <- gamlss(form, 
+                sigma.formula = form.sigma,
+                family = fam,
+                discrete = TRUE,
+                data = train,
+                n.cyc = 200,
+                trace = TRUE)
+  
+  pr <- predict(mod, newdata = test, what = "mu")
+  test$pr <- pr
+  predMat <- test %>% dplyr::select(-val) %>% spread(cycle, pr) %>% dplyr::select(`1`:`101`) %>% as.matrix()
+  score <- mean(relRMSE(trueMat, predMat), na.rm=T)
+  
+  return(score)
+  
+}, mc.cores = length(fams))
+
+saveRDS(res, "output/dist_comparison_hip.RDS")
+
+data.frame(family = fams, score = as.numeric(unlist(res))) %>% arrange(score)
 ```
 
-### GAM
+
+# Build final model
 
 ```{r}
-mod <- bam(val ~ 
-      te(cycle, speed, age) + 
-      s(subj, bs = 're') + 
-      study + 
-      sex + 
-      s(wt) + s(ht),
-      family = scat(),
-      data = df_ankle)
+## get the final model on the hold-out data set
+rm(list=ls())
+gc()
+
+# function to create final model on hold-out set
+# per joint
+create_final_model <- function(joint = "ankle" ,
+                               use_best_family = FALSE,
+                               defined_family = "NO",
+                               data = NULL,
+                               withRE = "studysubj")
+{
+
+  ############# read hold-out set ##############
+  if(is.null(data)){
+    data <- readRDS(paste0("output/", joint, "_splitted.RDS"))
+    this_data <<- do.call("rbind", data) # set global because gamlss does not find it otherwise
+  }else{
+    this_data <<- data
+  }
+  ##############################################
+
+  ############# get best mu form ###############
+  bo <- readRDS(paste0("output/BO_",joint,".RDS"))
+  df_bo <- bo$scoreSummary %>%
+    # drop the ones that did not work
+    filter(Score > -100) %>%
+    mutate(Score = -Score)
+
+  best_setting <- df_bo %>%
+    arrange(Score) %>%
+    dplyr::select(k_cycle:Score) %>%
+    dplyr::select(k_cycle:k_strlen) %>%
+    head(1) %>% c()
+  form <- do.call(settings_to_formula, best_setting)
+  if(withRE=="subj"){
+    form <- paste0("val ~ ba(", form, " + s(subj, bs = 're'))")
+  }else if(withRE=="study")
+  {
+    form <- paste0("val ~ ba(", form, " + s(study, bs = 're'))")
+  }else if(withRE=="studysubj"){
+    form <- paste0("val ~ ba(", form, " + s(study, bs = 're') + s(study, subj, bs = 're'))")
+  }else{
+    form <- paste0("val ~ ba(", form, ")")
+  }
+  ##############################################
+
+  ############# get best family ################
+  if(use_best_family)
+  {
+
+    fams <- c(
+      "NO", "GU", "RG" ,"LO", "NET", "TF", "TF2", "PE","PE2",
+      "SN1", "SN2", "exGAUS", "SHASH", "SHASHo","SHASHo2",
+      "EGB2", "JSU", "JSUo", "SEP1", "SEP2", "SEP3", "SEP4",
+      "ST1", "ST2", "ST3", "ST4", "ST5", "SST", "GT"
+    )
+
+    bestFam <- fams[which.min(unlist(readRDS(paste0("output/dist_comparison_",joint,".RDS"))))]
+
+  }else{
+
+    bestFam <- defined_family
+
+  }
+  ##############################################
+
+
+  #### define sig form and fit model ###########
+  sig_formula <- "~ ba (~ ti(cycle, bs = 'cr', k = 20))"
+
+  mod <- gamlss(formula = as.formula(form),
+                family = bestFam,
+                sigma.fo = as.formula(sig_formula),
+                discrete = TRUE,
+                data = this_data,
+                n.cyc = 200,
+                trace = TRUE)
+  ##############################################
+
+  return(list(mod,form))
+
+}
+
+# load original data
+dat <- readRDS("output/df_clean_self.RDS") %>%
+  filter (study != "lencioni") %>%
+  group_by(subj, speed, age, sex, ht, wt, study)%>%
+  ungroup () %>%
+  mutate(sex = factor(sex),
+         subj = factor(subj),
+         study = factor(study)) %>%
+  as.data.frame() %>%
+  arrange (study, subj, joint, cond, speed, cycle)
+
+# ankle
+mod_ankle <- create_final_model(joint = "ankle", data = dat %>% filter(joint=="ankle") %>%
+  filter(cycle < 70 & cycle > 20))
+pdf("output/plots_ankle.pdf")
+# old.par <- par()
+# par(old.par)
+term.plot(mod_ankle[[1]], what = "mu", ask = FALSE)
+term.plot(mod_ankle[[1]], what = "sigma")
+try(plot(mod_ankle[[1]]))
+dev.off()
+
+# hip
+mod_hip <- create_final_model(joint = "hip", data = dat %>% filter(joint=="hip"))
+pdf("output/plots_hip.pdf")
+# old.par <- par()
+# par(old.par)
+term.plot(mod_hip[[1]], what = "mu", ask = FALSE)
+term.plot(mod_hip[[1]], what = "sigma")
+plot(mod_hip[[1]])
+dev.off()
+
+# knee
+mod_knee <- create_final_model(joint = "knee", data = dat %>% filter(joint=="knee"))
+pdf("output/plots_knee.pdf")
+# old.par <- par()
+# par(old.par)
+term.plot(mod_knee[[1]], what = "mu", ask = FALSE)
+term.plot(mod_knee[[1]], what = "sigma")
+plot(mod_knee[[1]])
+dev.off()
+
+
+save (mod_ankle,
+      mod_knee,
+      mod_hip,
+      file = "output/final_model.RData")
+
 ```
+
+
+
 
