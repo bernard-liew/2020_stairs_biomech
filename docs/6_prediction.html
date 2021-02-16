@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Gamlss inference</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">2020_stairs_biomech</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Gamlss inference</h1>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2021-02-16
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+</p>
+<p>
+<strong>Knit directory:</strong> <code>2020_stairs_biomech/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20210216code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20210216)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20210216code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20210216)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongNocommitsyet"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> No commits yet </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongNocommitsyet" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/mediation.Rmd
+    Ignored:    manuscript/
+    Ignored:    output/all_data.pdf
+    Ignored:    output/all_data_clean.pdf
+    Ignored:    output/ankle_bamlss_b.RDS
+    Ignored:    output/ankle_gamlss_m0.RDS
+    Ignored:    output/ankle_gamlss_m1.RDS
+    Ignored:    output/ankle_gamlss_m2.RDS
+    Ignored:    output/ankle_gamlss_m3.RDS
+    Ignored:    output/ankle_gamlss_m4.RDS
+    Ignored:    output/ankle_gamlss_m5.RDS
+    Ignored:    output/ankle_gamlss_m6.RDS
+    Ignored:    output/ankle_gamlss_m7.RDS
+    Ignored:    output/ankle_pwr.html
+    Ignored:    output/bam_allspeed_ankle.RDS
+    Ignored:    output/bam_allspeed_ankle2.RDS
+    Ignored:    output/bam_allspeed_hip.RDS
+    Ignored:    output/bam_allspeed_hip2.RDS
+    Ignored:    output/bam_allspeed_knee.RDS
+    Ignored:    output/bam_allspeed_knee2.RDS
+    Ignored:    output/bam_selfspeed_ankle_outRm.RDS
+    Ignored:    output/bam_selfspeed_hip_outRm.RDS
+    Ignored:    output/bam_selfspeed_knee_outRm.RDS
+    Ignored:    output/bamlss_allspeed_ankle.RDS
+    Ignored:    output/bamlss_allspeed_hip.RDS
+    Ignored:    output/bamlss_allspeed_knee.RDS
+    Ignored:    output/bamlss_finalmod2_ankle.RDS
+    Ignored:    output/bamlss_finalmod2_hip.RDS
+    Ignored:    output/bamlss_finalmod2_knee.RDS
+    Ignored:    output/bamlss_finalmod_ankle.RDS
+    Ignored:    output/bamlss_finalmod_hip.RDS
+    Ignored:    output/bamlss_finalmod_knee.RDS
+    Ignored:    output/best_model_ankle.RDS
+    Ignored:    output/best_model_hip.RDS
+    Ignored:    output/best_model_knee.RDS
+    Ignored:    output/big_ssa_diagnostics.pdf
+    Ignored:    output/dist_comp_ankle_1.pdf
+    Ignored:    output/dist_comp_ankle_2.pdf
+    Ignored:    output/dist_comp_ankle_3.pdf
+    Ignored:    output/dist_comp_ankle_4.pdf
+    Ignored:    output/dist_comp_hip_1.pdf
+    Ignored:    output/dist_comp_hip_2.pdf
+    Ignored:    output/dist_comp_hip_3.pdf
+    Ignored:    output/dist_comp_hip_4.pdf
+    Ignored:    output/dist_comp_knee_1.pdf
+    Ignored:    output/dist_comp_knee_2.pdf
+    Ignored:    output/dist_comp_knee_3.pdf
+    Ignored:    output/dist_comp_knee_4.pdf
+    Ignored:    output/dxmod_ankle.pdf
+    Ignored:    output/dxmod_hip.pdf
+    Ignored:    output/dxmod_knee.pdf
+    Ignored:    output/explore_plot.pdf
+    Ignored:    output/explore_power_age.tiff
+    Ignored:    output/explore_power_cycle.tiff
+    Ignored:    output/explore_power_hist.tiff
+    Ignored:    output/explore_power_sex.tiff
+    Ignored:    output/explore_power_speed.tiff
+    Ignored:    output/final_model.RData
+    Ignored:    output/fukuchi_individual_clean_plot.pdf
+    Ignored:    output/fukuchi_individual_plot.pdf
+    Ignored:    output/gamlss_allspeed_ankle.RDS
+    Ignored:    output/gamlss_allspeed_ankle2.RDS
+    Ignored:    output/gamlss_allspeed_ankle3.RDS
+    Ignored:    output/gamlss_allspeed_ankle4.RDS
+    Ignored:    output/gamlss_allspeed_ankle_outRm.RDS
+    Ignored:    output/gamlss_allspeed_hip.RDS
+    Ignored:    output/gamlss_allspeed_hip2.RDS
+    Ignored:    output/gamlss_allspeed_hip3.RDS
+    Ignored:    output/gamlss_allspeed_hip4.RDS
+    Ignored:    output/gamlss_allspeed_hip_outRm.RDS
+    Ignored:    output/gamlss_allspeed_knee.RDS
+    Ignored:    output/gamlss_allspeed_knee2.RDS
+    Ignored:    output/gamlss_allspeed_knee4.RDS
+    Ignored:    output/gamlss_allspeed_knee_outRm.RDS
+    Ignored:    output/gamlss_ankle_allspeed.RDS
+    Ignored:    output/gamlss_finalmod_ankle.RDS
+    Ignored:    output/gamlss_finalmod_hip.RDS
+    Ignored:    output/gamlss_finalmod_knee.RDS
+    Ignored:    output/gamlss_hip_allspeed.RDS
+    Ignored:    output/gamlss_knee_allspeed.RDS
+    Ignored:    output/gamlss_self_ankle_outRm.RDS
+    Ignored:    output/gamlss_self_hip_outRm.RDS
+    Ignored:    output/gamlss_self_knee_outRm.RDS
+    Ignored:    output/hip_gamlss_m0.RDS
+    Ignored:    output/hip_gamlss_m1.RDS
+    Ignored:    output/hip_gamlss_m2.RDS
+    Ignored:    output/hip_gamlss_m3.RDS
+    Ignored:    output/hip_gamlss_m4.RDS
+    Ignored:    output/horst_individual_clean_plot.pdf
+    Ignored:    output/horst_individual_plot.pdf
+    Ignored:    output/knee_gamlss_m0.RDS
+    Ignored:    output/knee_gamlss_m1.RDS
+    Ignored:    output/knee_gamlss_m2.RDS
+    Ignored:    output/knee_gamlss_m3.RDS
+    Ignored:    output/knee_gamlss_m4.RDS
+    Ignored:    output/lencioni_individual_plot.pdf
+    Ignored:    output/original_self_individual.pdf
+    Ignored:    output/original_self_summary.pdf
+    Ignored:    output/schreiber_individual_clean_plot.pdf
+    Ignored:    output/schreiber_individual_plot.pdf
+    Ignored:    output/summary_plots.pdf
+    Ignored:    output/summary_self_plots.pdf
+    Ignored:    output/taylor_individual_clean_plot.pdf
+    Ignored:    output/taylor_individual_plot.pdf
+    Ignored:    output/traceplots_ankle.pdf
+    Ignored:    output/traceplots_hip.pdf
+    Ignored:    output/traceplots_knee.pdf
+
+Unstaged changes:
+    Modified:   analysis/3_gamlss_analysis.Rmd
+    Modified:   analysis/6_prediction.Rmd
+    Modified:   analysis/index.Rmd
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<div id="import-library" class="section level1">
+<h1>Import library</h1>
+<pre class="r"><code>rm (list = ls())
+
+# Helper
+library (tidyverse)
+library (qwraps2)
+library (magrittr)
+
+# modelling
+library (gamlss)
+library (gamlss.add)
+library(gamlss.dist)
+
+# plot
+library (itsadug)
+library(mgcViz)
+
+# Plotting
+library (cowplot)
+library (ggforce)
+library (rainbow)
+
+source (&quot;code/measures_johnson.R&quot;)</code></pre>
+</div>
+<div id="import-data" class="section level1">
+<h1>Import data</h1>
+<pre class="r"><code># Models
+load (&quot;output/final_model.RData&quot;)
+
+# Original data
+dat &lt;- readRDS(&quot;output/df_clean_self.RDS&quot;) %&gt;%
+  filter (study != &quot;lencioni&quot;) %&gt;%
+  group_by(subj, speed, age, sex, ht, wt, study)%&gt;%
+  ungroup () %&gt;%
+  mutate(sex = factor(sex),
+         subj = factor(subj),
+         study = factor(study)) %&gt;%
+  as.data.frame() %&gt;%
+  arrange (study, subj, joint, cond, speed, cycle) </code></pre>
+</div>
+<div id="descriptive-statistics" class="section level1">
+<h1>Descriptive statistics</h1>
+<pre class="r"><code>subj_per_jt &lt;- dat %&gt;%
+  group_by(joint, study) %&gt;%
+  distinct (subj) %&gt;%
+  tally() %T&gt;%
+  print ()</code></pre>
+<pre><code># A tibble: 12 x 3
+# Groups:   joint [3]
+   joint study         n
+   &lt;chr&gt; &lt;fct&gt;     &lt;int&gt;
+ 1 ankle fukuchi      32
+ 2 ankle horst        56
+ 3 ankle schreiber    48
+ 4 ankle taylor      133
+ 5 hip   fukuchi      33
+ 6 hip   horst        57
+ 7 hip   schreiber    47
+ 8 hip   taylor      132
+ 9 knee  fukuchi      33
+10 knee  horst        57
+11 knee  schreiber    48
+12 knee  taylor      133</code></pre>
+<pre class="r"><code>dat_sub &lt;- dat %&gt;%
+  filter (cycle == 1) %&gt;%
+  dplyr::select (-cond) %&gt;%
+  group_by(subj, study, age, sex, ht, wt) %&gt;%   
+  summarise_if(is.numeric, mean)
+
+
+our_summary1 &lt;-
+  list(&quot;Age (years)&quot; =
+       list(&quot;mean (sd)&quot; = ~ qwraps2::mean_sd(age, denote_sd = &quot;paren&quot;)),
+       &quot;Height (m)&quot; =
+       list(&quot;mean (sd)&quot; = ~ qwraps2::mean_sd(ht, denote_sd = &quot;paren&quot;)),
+        &quot;Mass (kg)&quot; =
+       list(&quot;mean (sd)&quot; = ~ qwraps2::mean_sd(wt, denote_sd = &quot;paren&quot;)),
+       &quot;Sex&quot; =
+       list(&quot;Female&quot; = ~ qwraps2::n_perc0(sex == &quot;f&quot;),
+            &quot;Male&quot;  = ~ qwraps2::n_perc0(sex == &quot;m&quot;)),
+       &quot;Speed (m/s)&quot; = 
+       list(&quot;mean (sd)&quot; = ~ qwraps2::mean_sd(speed, denote_sd = &quot;paren&quot;)),
+       &quot;Stride length (m)&quot; = 
+       list(&quot;mean (sd)&quot; = ~ qwraps2::mean_sd(strlen, denote_sd = &quot;paren&quot;)))
+
+by_cyl &lt;- summary_table(group_by(dat_sub, study), our_summary1) %&gt;%
+  as.data.frame() 
+
+by_cyl$Variables &lt;-  c(&quot;Age (years)&quot;,
+                     &quot;Height (m)&quot;,
+                      &quot;Mass (kg)&quot;,
+                      &quot;Sex-F&quot;,
+                      &quot;Sex-M&quot;,
+                      &quot;Speed (m/s)&quot;,
+                      &quot;Stride length (m)&quot;)
+
+by_cyl &lt;- dplyr::select (by_cyl, Variables, everything ())
+
+rownames (by_cyl) &lt;- NULL
+
+by_cyl</code></pre>
+<pre><code>          Variables fukuchi (N = 33) horst (N = 57) schreiber (N = 48)
+1       Age (years)    39.42 (17.87)   23.12 (2.73)      38.17 (13.97)
+2        Height (m)      1.67 (0.12)    1.74 (0.10)        1.74 (0.09)
+3         Mass (kg)    67.66 (12.44)  67.93 (11.26)      71.96 (12.19)
+4             Sex-F          15 (45)        29 (51)            23 (48)
+5             Sex-M          18 (55)        28 (49)            25 (52)
+6       Speed (m/s)      1.23 (0.17)    1.45 (0.10)        1.16 (0.14)
+7 Stride length (m)      1.22 (0.14)    1.51 (0.06)        1.28 (0.12)
+  taylor (N = 140)
+1     65.40 (6.47)
+2      1.68 (0.09)
+3    74.03 (14.92)
+4          90 (64)
+5          50 (36)
+6      1.41 (0.19)
+7      1.47 (0.16)</code></pre>
+</div>
+<div id="descriptive-plots" class="section level1">
+<h1>Descriptive plots</h1>
+<pre class="r"><code>age_cut &lt;- seq (10, 90, 10)
+age_labels &lt;- paste0 (paste (age_cut, &quot;-&quot;, age_cut[-1])[-length (age_cut)])
+
+age_labels[1] &lt;- &quot;18 - 20&quot;
+
+df_plot &lt;- dat %&gt;%
+  filter(study != &quot;lencioni&quot;) %&gt;% # data reported dissimilar to others
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels, levels = age_labels)) %&gt;%
+  distinct (subj, .keep_all = TRUE) %&gt;%
+  group_by(age_cat) %&gt;%
+  summarize (age_m = mean (age),
+             age_sd = sd(age),
+             speed_m = mean (speed),
+             speed_sd = sd(speed),
+             ht_m = mean (ht),
+             ht_sd = sd(ht),
+             wt_m = mean (wt),
+             wt_sd = sd(wt),
+             str_m = mean (strlen),
+             str_sd = sd (strlen))</code></pre>
+<pre><code>`summarise()` ungrouping output (override with `.groups` argument)</code></pre>
+<pre class="r"><code>df_plot_sex &lt;- dat %&gt;%
+  filter(study != &quot;lencioni&quot;) %&gt;% # data reported dissimilar to others
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels, levels = age_labels)) %&gt;%
+  distinct (subj, .keep_all = TRUE) %&gt;%
+  group_by(age_cat, sex) %&gt;%
+  summarize (n = n ())</code></pre>
+<pre><code>`summarise()` regrouping output by &#39;age_cat&#39; (override with `.groups` argument)</code></pre>
+<pre class="r"><code># Age
+f1 &lt;- ggplot(df_plot, aes(x = age_cat)) +
+  geom_point (aes (y = age_m)) +
+  geom_errorbar(aes (ymin = age_m - age_sd, ymax = age_m + age_sd), width = 0.2) + 
+  labs (x = &quot;Age category&quot;,
+        y = &quot;Age (years)&quot;) +
+  theme_cowplot() + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) 
+# Height
+f2 &lt;- ggplot(df_plot, aes(x = age_cat)) +
+  geom_point (aes (y = ht_m)) +
+  geom_errorbar(aes (ymin = ht_m - ht_sd, ymax = ht_m + ht_sd), width = 0.2) + 
+  labs (x = &quot;Age category&quot;,
+        y = &quot;Height (m)&quot;) +
+  theme_cowplot() + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) 
+
+# Weight
+f3 &lt;- ggplot(df_plot, aes(x = age_cat)) +
+  geom_point (aes (y = wt_m)) +
+  geom_errorbar(aes (ymin = wt_m - wt_sd, ymax = wt_m + wt_sd), width = 0.2) + 
+  labs (x = &quot;Age category&quot;,
+        y = &quot;Mass (kg)&quot;) +
+  theme_cowplot() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) 
+
+# Speed
+f4 &lt;- ggplot(df_plot, aes(x = age_cat)) +
+  geom_point (aes (y = speed_m)) +
+  geom_errorbar(aes (ymin = speed_m - speed_sd, ymax = speed_m + speed_sd), width = 0.2) + 
+  labs (x = &quot;Age category&quot;,
+        y = &quot;Speed (m/s)&quot;) +
+  theme_cowplot() + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) 
+
+# Stride length
+f5 &lt;- ggplot(df_plot, aes(x = age_cat)) +
+  geom_point (aes (y = str_m)) +
+  geom_errorbar(aes (ymin = str_m - str_sd, ymax = str_m + str_sd), width = 0.2) + 
+  labs (x = &quot;Age category&quot;,
+        y = &quot;Stride length (m)&quot;) +
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) 
+
+# Sex
+f6 &lt;- ggplot(df_plot_sex, aes(x = age_cat)) +
+  geom_bar (aes (y = n, fill = sex), position = position_dodge(preserve = &quot;single&quot;), stat = &quot;identity&quot;) +
+  scale_fill_manual (values = c(&quot;red&quot;, &quot;blue&quot;)) + 
+  labs (x = &quot;Age category&quot;,
+        y = &quot;No. participants&quot;) +
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) 
+
+pcol &lt;- plot_grid (f1 + theme (axis.title.x = element_blank() ), 
+                   f2 + theme (axis.title.x = element_blank()), 
+                   f3 + theme (axis.title.x = element_blank()),  
+                   f4 + theme (axis.title.x = element_blank()),  
+                   f5,
+                   f6,
+                   nrow = 3,
+                   ncol = 2,
+                   vjust = 1.5,
+                   hjust = 0,
+                   labels = &quot;auto&quot;)
+
+
+pcol</code></pre>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Export
+pdf (width = 12, height = 8, file = &quot;manuscript/fig1.pdf&quot;)
+
+pcol
+
+dev.off()</code></pre>
+<pre><code>png 
+  2 </code></pre>
+</div>
+<div id="set-colour-schems" class="section level1">
+<h1>Set colour schems</h1>
+<pre class="r"><code>cbp2 &lt;- c(&quot;#000000&quot;, &quot;#E69F00&quot;, &quot;#56B4E9&quot;, &quot;#009E73&quot;,
+          &quot;#F0E442&quot;, &quot;#0072B2&quot;, &quot;#D55E00&quot;, &quot;#CC79A7&quot;)</code></pre>
+</div>
+<div id="plot-original-average-data" class="section level1">
+<h1>Plot original average data</h1>
+<pre class="r"><code>speed_cut &lt;- c(0.7, 1.0, 1.5, 1.9)
+speed_labels &lt;- paste (speed_cut, &quot;-&quot;, speed_cut[-1])[-length (speed_cut)]
+
+df_plot &lt;- dat %&gt;%
+  filter(study != &quot;lencioni&quot;) %&gt;% # data reported dissimilar to others
+  mutate (age_cat  = cut (age, age_cut, labels = age_labels, levels = age_labels),
+          speed_cat  = cut (speed, speed_cut, labels = speed_labels, levels = speed_labels),
+          joint = factor (joint, levels = c(&quot;ankle&quot;, &quot;knee&quot;, &quot;hip&quot;))) %&gt;%
+  group_by(speed_cat, age_cat, joint, cycle) %&gt;%
+  summarize (val.mean = mean(val, na.rm = TRUE)) </code></pre>
+<pre><code>`summarise()` regrouping output by &#39;speed_cat&#39;, &#39;age_cat&#39;, &#39;joint&#39; (override with `.groups` argument)</code></pre>
+<pre class="r"><code>f &lt;- ggplot (data = df_plot) +
+  geom_line (aes (x = cycle, y = val.mean, colour = age_cat)) +
+  labs (x = &quot;% Stride&quot;,
+        y = &quot;Power (W/kg)&quot;) + 
+  guides(colour = guide_legend(title=&quot;Age (yrs)&quot;)) +
+  scale_color_manual(values = cbp2) + 
+  facet_wrap_paginate(speed_cat~joint, ncol = 3, nrow = 3, scales = &quot;free&quot;) +
+  theme_cowplot()
+
+f</code></pre>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="plot-individual-data" class="section level1">
+<h1>Plot individual data</h1>
+<pre class="r"><code>dat_wide &lt;- dat %&gt;%
+  pivot_wider(names_from = &quot;cycle&quot;, values_from = &quot;val&quot;)
+
+by_group &lt;- dat_wide %&gt;%
+  group_by(joint)
+
+by_key &lt;- by_group  %&gt;%
+  group_keys() 
+
+df_plot &lt;- by_group %&gt;%
+  group_split() %&gt;%
+  map (.%&gt;% dplyr::select (-(subj:study)) %&gt;% as.matrix)
+  
+names(df_plot) &lt;- by_key$joint
+
+df_plot &lt;- list(&quot;Ankle&quot; = df_plot[[&quot;ankle&quot;]], 
+                &quot;Knee&quot; = df_plot[[&quot;knee&quot;]], 
+                &quot;Hip&quot; = df_plot[[&quot;hip&quot;]])
+
+par(mfrow=c(2, 2))
+par (mar = c(5, 7, 1, 1))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat &lt;- df_plot[[i]] %&gt;% t()
+  samp_fds &lt;- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = &quot;% Stride&quot;, 
+                   yname = paste0 (names (df_plot)[i], &quot; power (W/kg)&quot;))
+  plot.fds(samp_fds, cex.axis = 1.5, cex.lab = 2)
+  
+}</code></pre>
+<pre><code>Warning in fds(x = c(1:101), y = samp_dat, xname = &quot;% Stride&quot;, yname =
+paste0(names(df_plot)[i], : Please assign column name for the data matrix.
+
+Warning in fds(x = c(1:101), y = samp_dat, xname = &quot;% Stride&quot;, yname =
+paste0(names(df_plot)[i], : Please assign column name for the data matrix.
+
+Warning in fds(x = c(1:101), y = samp_dat, xname = &quot;% Stride&quot;, yname =
+paste0(names(df_plot)[i], : Please assign column name for the data matrix.</code></pre>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="get-predictive-error" class="section level1">
+<h1>Get predictive error</h1>
+<pre class="r"><code># Ankle
+
+dat_a &lt;- dat %&gt;%
+  filter (joint == &quot;ankle&quot;) %&gt;%
+  filter (cycle &gt; 20 &amp; cycle &lt; 70) %&gt;%
+  mutate (fit = predict (mod_ankle[[1]]))
+
+obs &lt;- dat_a %&gt;%
+  dplyr::select (subj, cycle, speed, val) %&gt;%
+  pivot_wider(names_from = &quot;cycle&quot;,
+              values_from = &quot;val&quot;) %&gt;%
+  dplyr::select (-c(subj, speed)) %&gt;%
+  as.matrix()
+
+pred &lt;- dat_a %&gt;%
+  dplyr::select (subj, cycle, speed, fit) %&gt;%
+  pivot_wider(names_from = &quot;cycle&quot;,
+              values_from = &quot;fit&quot;) %&gt;%
+  dplyr::select (-c(subj, speed)) %&gt;%
+  as.matrix()
+
+error_a &lt;- apply (all_measures(obs, pred), 2, mean)
+
+# Knee
+
+dat_a &lt;- dat %&gt;%
+  filter (joint == &quot;knee&quot;) %&gt;%
+  mutate (fit = predict (mod_knee[[1]]))
+
+obs &lt;- dat_a %&gt;%
+  dplyr::select (subj, cycle, speed, val) %&gt;%
+  pivot_wider(names_from = &quot;cycle&quot;,
+              values_from = &quot;val&quot;) %&gt;%
+  dplyr::select (-c(subj, speed)) %&gt;%
+  as.matrix()
+
+pred &lt;- dat_a %&gt;%
+  dplyr::select (subj, cycle, speed, fit) %&gt;%
+  pivot_wider(names_from = &quot;cycle&quot;,
+              values_from = &quot;fit&quot;) %&gt;%
+  dplyr::select (-c(subj, speed)) %&gt;%
+  as.matrix()
+
+error_k &lt;- apply (all_measures(obs, pred), 2, mean)
+
+# Hip
+
+dat_a &lt;- dat %&gt;%
+  filter (joint == &quot;hip&quot;) %&gt;%
+  mutate (fit = predict (mod_hip[[1]]))
+
+obs &lt;- dat_a %&gt;%
+  dplyr::select (subj, cycle, speed, val) %&gt;%
+  pivot_wider(names_from = &quot;cycle&quot;,
+              values_from = &quot;val&quot;) %&gt;%
+  dplyr::select (-c(subj, speed)) %&gt;%
+  as.matrix()
+
+pred &lt;- dat_a %&gt;%
+  dplyr::select (subj, cycle, speed, fit) %&gt;%
+  pivot_wider(names_from = &quot;cycle&quot;,
+              values_from = &quot;fit&quot;) %&gt;%
+  dplyr::select (-c(subj, speed)) %&gt;%
+  as.matrix()
+
+error_h &lt;- apply (all_measures(obs, pred), 2, mean)
+
+bind_rows (error_a, error_k, error_h)</code></pre>
+<pre><code># A tibble: 3 x 3
+   RMSE relRMSE   cor
+  &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;
+1 0.414   0.114 0.939
+2 0.337   0.129 0.793
+3 0.281   0.172 0.797</code></pre>
+</div>
+<div id="smooth-plots" class="section level1">
+<h1>Smooth plots</h1>
+<div id="smooth-effect-of-age" class="section level2">
+<h2>Smooth effect of age</h2>
+<pre class="r"><code># Get smoother into a table
+
+asmo &lt;- get_modelterm (getSmo(mod_ankle[[1]]), 
+                      select = 2, 
+                      n.grid = 100,
+                      se = TRUE,
+                      as.data.frame = TRUE)</code></pre>
+<pre><code>Summary:
+    * age : numeric predictor; with 100 values ranging from 19.000000 to 86.000000. </code></pre>
+<pre class="r"><code>ksmo &lt;- get_modelterm (getSmo(mod_knee[[1]]), 
+                      select = 2, 
+                      n.grid = 100,
+                      se = TRUE,
+                      as.data.frame = TRUE)</code></pre>
+<pre><code>Summary:
+    * age : numeric predictor; with 100 values ranging from 19.000000 to 86.000000. </code></pre>
+<pre class="r"><code>hsmo &lt;- get_modelterm (getSmo(mod_hip[[1]]), 
+                      select = 2, 
+                      n.grid = 100,
+                      se = TRUE,
+                      as.data.frame = TRUE)</code></pre>
+<pre><code>Summary:
+    * age : numeric predictor; with 100 values ranging from 19.000000 to 86.000000. </code></pre>
+<pre class="r"><code>agesmo &lt;- bind_rows (asmo, ksmo, hsmo) %&gt;%
+  mutate (joint = rep (c(&quot;ankle&quot;, &quot;knee&quot;, &quot;hip&quot;), each = 100))
+
+# Plot
+
+  ggplot (agesmo) +
+    geom_line (aes (x = age, y = fit), size = 1) +
+    geom_ribbon(aes (x = age, 
+                     ymin = fit - 1.96 * se.fit, 
+                     ymax = fit + 1.96 * se.fit), 
+                fill = &quot;lightblue&quot;, 
+                alpha = 0.5) + 
+    facet_wrap (~ joint, ncol = 2, scales = &quot;fixed&quot;) + 
+    labs (x = &quot;Age (yo)&quot;,
+          y = &quot;Power (W/kg)&quot;) +
+    theme_cowplot()</code></pre>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="prediction-inference" class="section level1">
+<h1>Prediction inference</h1>
+<p>Set predictor values</p>
+<pre class="r"><code>speed &lt;- c(1, 1.5)
+age &lt;- seq (20, 80, 10)
+strlen &lt;- c(1.5)</code></pre>
+<div id="waveform-predictions" class="section level2">
+<h2>Waveform predictions</h2>
+<div id="ankle" class="section level3">
+<h3>Ankle</h3>
+<pre class="r"><code>smo &lt;- getSmo(mod_ankle[[1]])
+
+cycle &lt;- 20:70
+
+pp_ank &lt;- get_predictions(smo, 
+                      cond = list(age = age, speed = speed, cycle = cycle, strlen = strlen),
+                      rm.ranef = TRUE,
+                      se = TRUE) %&gt;%
+  mutate (age = factor (age),
+          speed = factor (speed))</code></pre>
+<pre><code>Summary:
+    * sex : factor; set to the value(s): m. 
+    * cycle : integer vector with 51 values; set to the value(s): 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, ... 
+    * age : numeric predictor; with 7 values ranging from 20.000000 to 80.000000. 
+    * speed : numeric predictor; set to the value(s): 1, 1.5. 
+    * ht : numeric predictor; set to the value(s): 1.74. 
+    * strlen : numeric predictor; set to the value(s): 1.5. 
+    * study : factor; set to the value(s): horst. (Might be canceled as random effect, check below.) 
+    * subj : factor; set to the value(s): horst_s03. (Might be canceled as random effect, check below.) 
+    * NOTE : The following random effects columns are canceled: s(study),s(study,subj)
+ </code></pre>
+<pre class="r"><code>ank_plot &lt;- ggplot (pp_ank) +
+  geom_line (aes (x = cycle, y = fit, colour = age)) +
+  scale_colour_manual(values = cbp2) +
+  facet_wrap (~ speed, ncol = 2, scales = &quot;fixed&quot;) + 
+  xlim (1, 101) + 
+  labs (x = &quot;% Stride&quot;,
+        y = &quot;Power (W/kg)&quot;,
+        colour = &quot;Age (yo)&quot;) +
+  guides (fill = FALSE) +
+  theme_cowplot()</code></pre>
+</div>
+<div id="knee" class="section level3">
+<h3>Knee</h3>
+<pre class="r"><code>smo &lt;- getSmo(mod_knee[[1]])
+
+cycle &lt;- 1:101
+
+pp_kne &lt;- get_predictions(smo, 
+                      cond = list(age = age, speed = speed, cycle = cycle, strlen = strlen),
+                      rm.ranef = TRUE,
+                      se = TRUE) %&gt;%
+  mutate (age = factor (age),
+          speed = factor (speed))</code></pre>
+<pre><code>Summary:
+    * sex : factor; set to the value(s): f. 
+    * cycle : integer vector with 101 values; set to the value(s): 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ... 
+    * age : numeric predictor; with 7 values ranging from 20.000000 to 80.000000. 
+    * speed : numeric predictor; set to the value(s): 1, 1.5. 
+    * ht : numeric predictor; set to the value(s): 1.74. 
+    * strlen : numeric predictor; set to the value(s): 1.5. 
+    * study : factor; set to the value(s): horst. (Might be canceled as random effect, check below.) 
+    * subj : factor; set to the value(s): horst_s03. (Might be canceled as random effect, check below.) 
+    * NOTE : The following random effects columns are canceled: s(study),s(study,subj)
+ </code></pre>
+<pre class="r"><code>kne_plot &lt;- ggplot (pp_kne) +
+  geom_line (aes (x = cycle, y = fit, colour = age)) +
+  scale_colour_manual(values = cbp2) +
+  facet_wrap (~ speed, ncol = 2, scales = &quot;fixed&quot;) + 
+  labs (x = &quot;% Stride&quot;,
+        y = &quot;Power (W/kg)&quot;,
+        colour = &quot;Age (yo)&quot;) +
+  guides (fill = FALSE) +
+  theme_cowplot()</code></pre>
+</div>
+<div id="hip" class="section level3">
+<h3>Hip</h3>
+<pre class="r"><code>smo &lt;- getSmo(mod_hip[[1]])
+
+cycle &lt;- 1:101
+
+pp_hip &lt;- get_predictions(smo, 
+                      cond = list(age = age, speed = speed, cycle = cycle, strlen = strlen),
+                      rm.ranef = TRUE,
+                      se = TRUE) %&gt;%
+  mutate (age = factor (age),
+          speed = factor (speed))</code></pre>
+<pre><code>Summary:
+    * sex : factor; set to the value(s): f. 
+    * cycle : integer vector with 101 values; set to the value(s): 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ... 
+    * age : numeric predictor; with 7 values ranging from 20.000000 to 80.000000. 
+    * speed : numeric predictor; set to the value(s): 1, 1.5. 
+    * ht : numeric predictor; set to the value(s): 1.74. 
+    * strlen : numeric predictor; set to the value(s): 1.5. 
+    * study : factor; set to the value(s): horst. (Might be canceled as random effect, check below.) 
+    * subj : factor; set to the value(s): horst_s03. (Might be canceled as random effect, check below.) 
+    * NOTE : The following random effects columns are canceled: s(study),s(study,subj)
+ </code></pre>
+<pre class="r"><code>hip_plot &lt;- ggplot (pp_hip) +
+  geom_line (aes (x = cycle, y = fit, colour = age)) +
+  scale_colour_manual(values = cbp2) +
+  facet_wrap ( ~ speed, ncol = 2, scales = &quot;fixed&quot;) + 
+  labs (x = &quot;% Stride&quot;,
+        y = &quot;Power (W/kg)&quot;,
+        colour = &quot;Age (yo)&quot;) +
+  guides (fill = FALSE) +
+  theme_cowplot()</code></pre>
+</div>
+<div id="plot-all-joints-waveform" class="section level3">
+<h3>Plot all joints waveform</h3>
+<pre class="r"><code> pcol &lt;- plot_grid (ank_plot + 
+              theme(
+                axis.text.x = element_blank(),
+                axis.title.x = element_blank()) + 
+                  theme(legend.position=&quot;none&quot;),
+            kne_plot +
+              theme(
+                axis.text.x = element_blank(),
+                axis.title.x = element_blank()) + 
+                  theme(legend.position=&quot;none&quot;),
+            hip_plot + 
+                  theme(legend.position=&quot;none&quot;),
+            nrow = 3,
+            ncol = 1,
+            vjust = 1.5,
+            hjust = 0,
+            labels = &quot;auto&quot;)
+
+# extract the legend from one of the plots
+legend &lt;- get_legend(
+  # create some space to the left of the legend
+  ank_plot + theme(legend.box.margin = margin(0, 0, 0, 12))
+)
+
+
+# add the legend to the row we made earlier. Give it one-third of 
+# the width of one plot (via rel_widths).
+plot_grid(pcol, legend, rel_widths = c(3, .4))</code></pre>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-20-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="peaks-inference" class="section level2">
+<h2>Peaks inference</h2>
+</div>
+<div id="ankle-1" class="section level2">
+<h2>Ankle</h2>
+<pre class="r"><code>a2 &lt;-pp_ank %&gt;%
+  group_by(age, speed, strlen) %&gt;%
+  filter (fit == max (fit))
+
+a2_plot &lt;- ggplot (a2) +
+  geom_point(aes (x = age, y = fit, group = 1)) +
+  geom_line (aes (x = age, y = fit, group = 1)) + 
+  geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
+  facet_wrap ( ~ speed, ncol = 2, scales = &quot;fixed&quot;) + 
+  labs (x = &quot;Age (yo)&quot;,
+        y = &quot;A2 (W/kg)&quot;) +
+  theme_cowplot()</code></pre>
+</div>
+<div id="knee-1" class="section level2">
+<h2>Knee</h2>
+<pre class="r"><code>k2 &lt;-pp_kne %&gt;%
+  filter (cycle &gt; 10 &amp; cycle &lt; 40) %&gt;%
+  group_by(age, speed, strlen) %&gt;%
+  filter (fit == max (fit))
+
+k2_plot &lt;- ggplot (k2) +
+  geom_point(aes (x = age, y = fit, group = 1)) +
+  geom_line (aes (x = age, y = fit, group = 1)) + 
+  geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
+  facet_wrap ( ~ speed, ncol = 2, scales = &quot;fixed&quot;) + 
+  labs (x = &quot;Age (yo)&quot;,
+        y = &quot;K2 (W/kg)&quot;) +
+  theme_cowplot()</code></pre>
+</div>
+<div id="hip-1" class="section level2">
+<h2>hip</h2>
+<pre class="r"><code># H1
+h1 &lt;-pp_hip %&gt;%
+  filter (cycle &gt; 5 &amp; cycle &lt; 40) %&gt;%
+  group_by(age, speed, strlen) %&gt;%
+  filter (fit == max (fit))
+
+h1_plot &lt;- ggplot (h1) +
+  geom_point(aes (x = age, y = fit, group = 1)) +
+  geom_line (aes (x = age, y = fit, group = 1)) + 
+  geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
+  facet_wrap ( ~ speed, ncol = 2, scales = &quot;fixed&quot;) + 
+  labs (x = &quot;Age (yo)&quot;,
+        y = &quot;H1 (W/kg)&quot;) +
+  theme_cowplot()
+
+# H3
+h3 &lt;-pp_hip %&gt;%
+  filter (cycle &gt; 55 &amp; cycle &lt; 80) %&gt;%
+  group_by(age, speed, strlen) %&gt;%
+  filter (fit == max (fit))
+
+h3_plot &lt;- ggplot (h3) +
+  geom_point(aes (x = age, y = fit, group = 1)) +
+  geom_line (aes (x = age, y = fit, group = 1)) + 
+  geom_errorbar(aes (x = age, ymin = fit - CI, ymax = fit + CI)) + 
+  facet_wrap ( ~ speed, ncol = 2, scales = &quot;fixed&quot;) + 
+  labs (x = &quot;Age (yo)&quot;,
+        y = &quot;H3 (W/kg)&quot;) +
+  theme_cowplot()</code></pre>
+</div>
+<div id="plot-discrete-powers" class="section level2">
+<h2>Plot discrete powers</h2>
+<pre class="r"><code> plot_grid (a2_plot + 
+              theme(
+                axis.text.x = element_blank(),
+                axis.title.x = element_blank()),
+            # k2_plot +
+            #   theme(
+            #     axis.text.x = element_blank(),
+            #     axis.title.x = element_blank()),
+            h1_plot+ 
+              theme(
+                axis.text.x = element_blank(),
+                axis.title.x = element_blank()),
+            h3_plot ,
+            nrow = 3,
+            ncol = 1,
+            vjust = 1.5,
+            hjust = 0,
+            align = &quot;v&quot;,
+            labels = &quot;auto&quot;)</code></pre>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-25-1.png" width="672" style="display: block; margin: auto;" /></p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.0.2 (2020-06-22)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 18363)
+
+Matrix products: default
+
+locale:
+[1] LC_COLLATE=English_United Kingdom.1252 
+[2] LC_CTYPE=English_United Kingdom.1252   
+[3] LC_MONETARY=English_United Kingdom.1252
+[4] LC_NUMERIC=C                           
+[5] LC_TIME=English_United Kingdom.1252    
+
+attached base packages:
+[1] parallel  splines   stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] rainbow_3.6       pcaPP_1.9-73      ggforce_0.3.2     cowplot_1.1.1    
+ [5] mgcViz_0.1.6      rgl_0.103.5       qgam_1.3.2        itsadug_2.4      
+ [9] plotfunctions_1.4 gamlss.add_5.1-6  rpart_4.1-15      nnet_7.3-14      
+[13] mgcv_1.8-33       gamlss_5.2-0      nlme_3.1-151      gamlss.dist_5.1-7
+[17] MASS_7.3-53       gamlss.data_5.1-4 magrittr_2.0.1    qwraps2_0.5.0    
+[21] forcats_0.5.0     stringr_1.4.0     dplyr_1.0.2       purrr_0.3.4      
+[25] readr_1.4.0       tidyr_1.1.2       tibble_3.0.4      ggplot2_3.3.3    
+[29] tidyverse_1.3.0  
+
+loaded via a namespace (and not attached):
+ [1] minqa_1.2.4             colorspace_2.0-0        ellipsis_0.3.1         
+ [4] mclust_5.4.7            rprojroot_2.0.2         fs_1.5.0               
+ [7] rstudioapi_0.13         farver_2.0.3            mvtnorm_1.1-1          
+[10] fansi_0.4.1             lubridate_1.7.9.2       xml2_1.3.2             
+[13] codetools_0.2-18        doParallel_1.0.16       knitr_1.30             
+[16] polyclip_1.10-0         jsonlite_1.7.2          workflowr_1.6.2        
+[19] nloptr_1.2.2.2          broom_0.7.4.9000        cluster_2.1.0          
+[22] dbplyr_2.0.0            shiny_1.5.0             compiler_4.0.2         
+[25] httr_1.4.2              backports_1.2.0         assertthat_0.2.1       
+[28] Matrix_1.2-18           fastmap_1.0.1           cli_2.2.0              
+[31] tweenr_1.0.1            later_1.1.0.1           htmltools_0.5.0        
+[34] tools_4.0.2             gtable_0.3.0            glue_1.4.2             
+[37] Rcpp_1.0.6              cellranger_1.1.0        vctrs_0.3.6            
+[40] iterators_1.0.13        crosstalk_1.1.0.1       xfun_0.20              
+[43] lme4_1.1-26             rvest_0.3.6             mime_0.9               
+[46] miniUI_0.1.1.1          lifecycle_0.2.0         statmod_1.4.35         
+[49] scales_1.1.1            hms_0.5.3               promises_1.1.1         
+[52] RColorBrewer_1.1-2      gamm4_0.2-6             yaml_2.2.1             
+[55] gridExtra_2.3           DiceKriging_1.5.8       reshape_0.8.8          
+[58] stringi_1.5.3           foreach_1.5.1           boot_1.3-25            
+[61] manipulateWidget_0.10.1 hdrcde_3.3              matrixStats_0.57.0     
+[64] rlang_0.4.10            pkgconfig_2.0.3         evaluate_0.14          
+[67] lattice_0.20-41         labeling_0.4.2          ks_1.11.7              
+[70] htmlwidgets_1.5.3       tidyselect_1.1.0        GGally_2.1.0           
+[73] plyr_1.8.6              R6_2.5.0                generics_0.1.0         
+[76] DBI_1.1.0               pillar_1.4.7            haven_2.3.1            
+[79] withr_2.3.0             survival_3.2-7          modelr_0.1.8           
+[82] crayon_1.3.4            utf8_1.1.4              KernSmooth_2.23-18     
+[85] rmarkdown_2.6           viridis_0.5.1           grid_4.0.2             
+[88] readxl_1.3.1            git2r_0.27.1            reprex_0.3.0           
+[91] digest_0.6.27           webshot_0.5.2           xtable_1.8-4           
+[94] httpuv_1.5.4            munsell_0.5.0           viridisLite_0.3.0      </code></pre>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -1,13 +1,17 @@
 ---
-title: "6_prediction"
-output: html_notebook
-editor_options: 
+title: "Gamlss inference"
+site: workflowr::wflow_site
+output:
+  workflowr::wflow_html:
+    toc: false
+editor_options:
   chunk_output_type: console
 ---
+
   
 # Import library
   
-```{r}
+```{r message=FALSE, warning=FALSE}
 
 rm (list = ls())
 
@@ -97,6 +101,13 @@ by_cyl$Variables <-  c("Age (years)",
 
 by_cyl <- dplyr::select (by_cyl, Variables, everything ())
 
+rownames (by_cyl) <- NULL
+
+by_cyl
+```
+
+```{r, eval = FALSE, include = FALSE}
+# Export to word
 my_path <- paste0("manuscript/table_", 
                   "summary",
                   ".docx")
@@ -109,9 +120,8 @@ my_doc <- read_docx()  %>%
   body_end_section_landscape()
 
 print (my_doc, target = my_path)
-
-
 ```
+
 
 # Descriptive plots
 
@@ -218,13 +228,19 @@ pcol <- plot_grid (f1 + theme (axis.title.x = element_blank() ),
                    labels = "auto")
 
 
+pcol
+```
 
+```{r}
+
+# Export
 pdf (width = 12, height = 8, file = "manuscript/fig1.pdf")
 
 pcol
 
 dev.off()
 ```
+
 
 # Set colour schems
 
@@ -257,6 +273,12 @@ f <- ggplot (data = df_plot) +
   facet_wrap_paginate(speed_cat~joint, ncol = 3, nrow = 3, scales = "free") +
   theme_cowplot()
 
+f
+```
+
+```{r, eval = FALSE, include = FALSE}
+
+# Export
 n <- n_pages(f)
 
 pdf (width = 10, height = 8, file = "manuscript/smfig_summary.pdf")
@@ -270,12 +292,9 @@ for (i in 1:n) {
 dev.off()
 ```
 
-```{r}
+# Plot individual data
 
-ggplot (dat) + 
-  geom_line (aes (x = cycle, y = val, colour = subj)) + 
-  facet_wrap(~ joint, ncol = 3) +
-  guides (colour = FALSE)
+```{r}
 
 dat_wide <- dat %>%
   pivot_wider(names_from = "cycle", values_from = "val")
@@ -296,6 +315,24 @@ df_plot <- list("Ankle" = df_plot[["ankle"]],
                 "Knee" = df_plot[["knee"]], 
                 "Hip" = df_plot[["hip"]])
 
+par(mfrow=c(2, 2))
+par (mar = c(5, 7, 1, 1))
+
+for(i in which(sapply(df_plot, is.matrix))){
+  samp_dat <- df_plot[[i]] %>% t()
+  samp_fds <- fds (x = c(1:101), 
+                   y = samp_dat, 
+                   xname = "% Stride", 
+                   yname = paste0 (names (df_plot)[i], " power (W/kg)"))
+  plot.fds(samp_fds, cex.axis = 1.5, cex.lab = 2)
+  
+}
+
+
+```
+
+```{r, eval = FALSE, include = FALSE}
+# Export
 pdf (width = 20, height = 15, file = "manuscript/smfig_individual.pdf")
 
 par(mfrow=c(2, 2))
@@ -420,6 +457,23 @@ agesmo <- bind_rows (asmo, ksmo, hsmo) %>%
 
 # Plot
 
+  ggplot (agesmo) +
+    geom_line (aes (x = age, y = fit), size = 1) +
+    geom_ribbon(aes (x = age, 
+                     ymin = fit - 1.96 * se.fit, 
+                     ymax = fit + 1.96 * se.fit), 
+                fill = "lightblue", 
+                alpha = 0.5) + 
+    facet_wrap (~ joint, ncol = 2, scales = "fixed") + 
+    labs (x = "Age (yo)",
+          y = "Power (W/kg)") +
+    theme_cowplot()
+
+
+```
+
+```{r, eval = FALSE, include = FALSE}
+# Export
 pdf (width = 8, height = 5, file = "manuscript/fig2.pdf")
 
   ggplot (agesmo) +
@@ -437,9 +491,11 @@ pdf (width = 8, height = 5, file = "manuscript/fig2.pdf")
 dev.off()
 ```
 
+
+
+```{r, eval = FALSE, include = FALSE}
 ## Get peak values of smooth
 
-```{r}
 # Ankle maximum
 
 peaks <- asmo[asmo$fit == max (asmo$fit),]
@@ -604,6 +660,14 @@ legend <- get_legend(
 )
 
 
+# add the legend to the row we made earlier. Give it one-third of 
+# the width of one plot (via rel_widths).
+plot_grid(pcol, legend, rel_widths = c(3, .4))
+
+```
+
+```{r, eval = FALSE, include = FALSE}
+# Export
 pdf (width = 8, height = 8, file = "manuscript/fig3.pdf")
 
 # add the legend to the row we made earlier. Give it one-third of 
@@ -693,7 +757,30 @@ h3_plot <- ggplot (h3) +
 ## Plot discrete powers
 
 ```{r}
+ plot_grid (a2_plot + 
+              theme(
+                axis.text.x = element_blank(),
+                axis.title.x = element_blank()),
+            # k2_plot +
+            #   theme(
+            #     axis.text.x = element_blank(),
+            #     axis.title.x = element_blank()),
+            h1_plot+ 
+              theme(
+                axis.text.x = element_blank(),
+                axis.title.x = element_blank()),
+            h3_plot ,
+            nrow = 3,
+            ncol = 1,
+            vjust = 1.5,
+            hjust = 0,
+            align = "v",
+            labels = "auto")
 
+```
+
+```{r, eval = FALSE, include = FALSE}
+# Export
 pdf (width = 6, height = 7, file = "manuscript/fig4.pdf")
 
  plot_grid (a2_plot + 
@@ -719,9 +806,10 @@ pdf (width = 6, height = 7, file = "manuscript/fig4.pdf")
 dev.off()
 ```
 
+
+```{r, eval = FALSE, include = FALSE}
 ## Report peaks
 
-```{r}
 # Ankle
 ## 1m/s
 
