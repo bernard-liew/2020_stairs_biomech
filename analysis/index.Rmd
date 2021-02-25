@@ -11,6 +11,6 @@ editor_options:
 This is the website containing the codes for the paper.
 
 
-Click on this [docs/3_gamlss_analysis.html](3_gamlss_analysis.html) to see the codes for the analysis.
+Click on this [analysis](3_gamlss_analysis.html) to see the codes for the analysis.
 
-Click on this [docs/6_prediction.html](6_prediction.html) to see the codes for the results.
+Click on this [result](6_prediction.html) to see the codes for the results.

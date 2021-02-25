@@ -34,6 +34,9 @@ library (cowplot)
 library (ggforce)
 library (rainbow)
 
+#Table
+library (kableExtra)
+
 source ("code/measures_johnson.R")
 ```
 
@@ -74,7 +77,7 @@ dat_sub <- dat %>%
 
 
 our_summary1 <-
-  list("Age (years)" =
+  list("Age (yo)" =
        list("mean (sd)" = ~ qwraps2::mean_sd(age, denote_sd = "paren")),
        "Height (m)" =
        list("mean (sd)" = ~ qwraps2::mean_sd(ht, denote_sd = "paren")),
@@ -103,7 +106,9 @@ by_cyl <- dplyr::select (by_cyl, Variables, everything ())
 
 rownames (by_cyl) <- NULL
 
-by_cyl
+by_cyl %>%
+  kable %>%
+  kable_styling()
 ```
 
 ```{r, eval = FALSE, include = FALSE}
@@ -125,7 +130,7 @@ print (my_doc, target = my_path)
 
 # Descriptive plots
 
-```{r}
+```{r, fig.height = 10, fig.width = 8}
 age_cut <- seq (10, 90, 10)
 age_labels <- paste0 (paste (age_cut, "-", age_cut[-1])[-length (age_cut)])
 
@@ -159,7 +164,7 @@ f1 <- ggplot(df_plot, aes(x = age_cat)) +
   geom_point (aes (y = age_m)) +
   geom_errorbar(aes (ymin = age_m - age_sd, ymax = age_m + age_sd), width = 0.2) + 
   labs (x = "Age category",
-        y = "Age (years)") +
+        y = "Age (yo)") +
   theme_cowplot() + 
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
@@ -231,7 +236,7 @@ pcol <- plot_grid (f1 + theme (axis.title.x = element_blank() ),
 pcol
 ```
 
-```{r}
+```{r, eval = FALSE, include = FALSE}
 
 # Export
 pdf (width = 12, height = 8, file = "manuscript/fig1.pdf")
@@ -251,7 +256,7 @@ cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
 
 # Plot original average data
 
-```{r}
+```{r, fig.height = 10, fig.width = 8}
 
 speed_cut <- c(0.7, 1.0, 1.5, 1.9)
 speed_labels <- paste (speed_cut, "-", speed_cut[-1])[-length (speed_cut)]
@@ -294,7 +299,7 @@ dev.off()
 
 # Plot individual data
 
-```{r}
+```{r, fig.height = 10, fig.width = 8}
 
 dat_wide <- dat %>%
   pivot_wider(names_from = "cycle", values_from = "val")
@@ -422,7 +427,9 @@ pred <- dat_a %>%
 
 error_h <- apply (all_measures(obs, pred), 2, mean)
 
-bind_rows (error_a, error_k, error_h)
+bind_rows (error_a, error_k, error_h) %>%
+  kable () %>%
+  kable_styling()
 ```
 
 
@@ -562,7 +569,7 @@ pp_ank <- get_predictions(smo,
                       rm.ranef = TRUE,
                       se = TRUE) %>%
   mutate (age = factor (age),
-          speed = factor (speed))
+          speed = factor (speed, labels = c("1m/s", "1.5m/s")))
 
 ank_plot <- ggplot (pp_ank) +
   geom_line (aes (x = cycle, y = fit, colour = age)) +
@@ -591,7 +598,7 @@ pp_kne <- get_predictions(smo,
                       rm.ranef = TRUE,
                       se = TRUE) %>%
   mutate (age = factor (age),
-          speed = factor (speed))
+          speed = factor (speed, labels = c("1m/s", "1.5m/s")))
 
 kne_plot <- ggplot (pp_kne) +
   geom_line (aes (x = cycle, y = fit, colour = age)) +
@@ -618,7 +625,7 @@ pp_hip <- get_predictions(smo,
                       rm.ranef = TRUE,
                       se = TRUE) %>%
   mutate (age = factor (age),
-          speed = factor (speed))
+          speed = factor (speed, labels = c("1m/s", "1.5m/s")))
 
 hip_plot <- ggplot (pp_hip) +
   geom_line (aes (x = cycle, y = fit, colour = age)) +
@@ -634,7 +641,7 @@ hip_plot <- ggplot (pp_hip) +
 
 ### Plot all joints waveform
 
-```{r}
+```{r, fig.height = 10, fig.width = 8}
  pcol <- plot_grid (ank_plot + 
               theme(
                 axis.text.x = element_blank(),
@@ -686,7 +693,7 @@ dev.off()
 
 a2 <-pp_ank %>%
   group_by(age, speed, strlen) %>%
-  filter (fit == max (fit))
+  filter (fit == max (fit)) 
 
 a2_plot <- ggplot (a2) +
   geom_point(aes (x = age, y = fit, group = 1)) +
@@ -706,7 +713,7 @@ a2_plot <- ggplot (a2) +
 k2 <-pp_kne %>%
   filter (cycle > 10 & cycle < 40) %>%
   group_by(age, speed, strlen) %>%
-  filter (fit == max (fit))
+  filter (fit == max (fit)) 
 
 k2_plot <- ggplot (k2) +
   geom_point(aes (x = age, y = fit, group = 1)) +
@@ -756,7 +763,7 @@ h3_plot <- ggplot (h3) +
 
 ## Plot discrete powers
 
-```{r}
+```{r, fig.height = 10, fig.width = 8}
  plot_grid (a2_plot + 
               theme(
                 axis.text.x = element_blank(),
