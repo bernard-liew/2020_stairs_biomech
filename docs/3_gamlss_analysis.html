@@ -317,7 +317,7 @@ $(document).ready(function () {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -326,7 +326,7 @@ $(document).ready(function () {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -335,10 +335,10 @@ $(document).ready(function () {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-16
+<strong>Last updated:</strong> 2021-02-25
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
 </p>
 <p>
 <strong>Knit directory:</strong> <code>2020_stairs_biomech/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -354,12 +354,12 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
 </div>
 </div>
 </div>
@@ -426,19 +426,23 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongNocommitsyet"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> No commits yet </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombernardliew2020stairsbiomechtree403511564652012f40165289d15fe355210e7d2btargetblank4035115a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bernard-liew/2020_stairs_biomech/tree/403511564652012f40165289d15fe355210e7d2b" target="_blank">4035115</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongNocommitsyet" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcombernardliew2020stairsbiomechtree403511564652012f40165289d15fe355210e7d2btargetblank4035115a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/bernard-liew/2020_stairs_biomech/tree/403511564652012f40165289d15fe355210e7d2b" target="_blank">4035115</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 </p>
 <pre><code>
 Ignored files:
+    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
     Ignored:    analysis/mediation.Rmd
     Ignored:    manuscript/
@@ -548,10 +552,8 @@ Ignored files:
     Ignored:    output/traceplots_hip.pdf
     Ignored:    output/traceplots_knee.pdf
 
-Unstaged changes:
-    Modified:   analysis/3_gamlss_analysis.Rmd
-    Modified:   analysis/6_prediction.Rmd
-    Modified:   analysis/index.Rmd
+Untracked files:
+    Untracked:  output/dat.xlsx
 
 </code></pre>
 <p>
@@ -564,9 +566,307 @@ Note that any generated files, e.g. HTML, png, CSS, etc., are not included in t
 <hr>
 </div>
 <div id="versions" class="tab-pane fade">
+
 <p>
-There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/3_gamlss_analysis.Rmd</code>) and HTML (<code>docs/3_gamlss_analysis.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
 </p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/da0f81a6b08bde5decf2620289b9cae95c4b3ed8/analysis/3_gamlss_analysis.Rmd" target="_blank">da0f81a</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2021-02-16
+</td>
+<td>
+updated website for paper
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/bernard-liew/2020_stairs_biomech/da0f81a6b08bde5decf2620289b9cae95c4b3ed8/docs/3_gamlss_analysis.html" target="_blank">da0f81a</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2021-02-16
+</td>
+<td>
+updated website for paper
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/4d33053dc8fffe07e53160c2d6df1af0f2cbf654/analysis/3_gamlss_analysis.Rmd" target="_blank">4d33053</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2021-02-16
+</td>
+<td>
+cleaned analysis file
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/e63bc35eb1bfb52dbf4f24bf8b414ada7f2a9493/analysis/3_gamlss_analysis.Rmd" target="_blank">e63bc35</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-06-16
+</td>
+<td>
+Added descriptives
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/65785731478460a62f5fa495151ee37e57f4f6fd/analysis/3_gamlss_analysis.Rmd" target="_blank">6578573</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-06-13
+</td>
+<td>
+change path directory
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/62c3b558670f9bcb28a63e757ef76173eff710ff/analysis/3_gamlss_analysis.Rmd" target="_blank">62c3b55</a>
+</td>
+<td>
+davidruegamer
+</td>
+<td>
+2020-06-11
+</td>
+<td>
+add model analysis
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/f4f4e5c0346a8101c649f774e9c739c9874c0272/analysis/3_gamlss_analysis.Rmd" target="_blank">f4f4e5c</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-06-01
+</td>
+<td>
+analyze best models
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/88706fb2e417e23babc954f6a28844b1e6ecdf8a/analysis/3_gamlss_analysis.Rmd" target="_blank">88706fb</a>
+</td>
+<td>
+davidruegamer
+</td>
+<td>
+2020-05-29
+</td>
+<td>
+add model search
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/3df0dd0e1c535befbc3499ac7031183f177d4d9f/analysis/3_gamlss_analysis.Rmd" target="_blank">3df0dd0</a>
+</td>
+<td>
+davidruegamer
+</td>
+<td>
+2020-05-25
+</td>
+<td>
+add mgcv gamlss
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/04e0691f5e0537494f94f035cc0dd740a86959e8/analysis/3_gamlss_analysis.Rmd" target="_blank">04e0691</a>
+</td>
+<td>
+davidruegamer
+</td>
+<td>
+2020-05-25
+</td>
+<td>
+added conditional model search
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/d1035c038bcc614a7eaa63f2ff11ffaa0251b9b8/analysis/3_gamlss_analysis.Rmd" target="_blank">d1035c0</a>
+</td>
+<td>
+davidruegamer
+</td>
+<td>
+2020-05-19
+</td>
+<td>
+set output directory relative to file, make parsing of cycle number more robust
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/41e76d1f79ffbe12cee5fafdd0b937afb3ec65af/analysis/3_gamlss_analysis.Rmd" target="_blank">41e76d1</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-05-15
+</td>
+<td>
+added smoothing spline and 3d plot
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/03e0d0a7daa50572e860a3231c9d0207e3ae530b/analysis/3_gamlss_analysis.Rmd" target="_blank">03e0d0a</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-05-06
+</td>
+<td>
+gamlss modelling explore
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/f8d39b5c4519a87a9beb4111283c068b91ddbe4c/analysis/3_gamlss_analysis.Rmd" target="_blank">f8d39b5</a>
+</td>
+<td>
+Bernard
+</td>
+<td>
+2020-04-27
+</td>
+<td>
+First gamlss model, WIP
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/7976194a074e5bbc86da6c12228e10d6b64cb5af/analysis/3_gamlss_analysis.Rmd" target="_blank">7976194</a>
+</td>
+<td>
+Bernard
+</td>
+<td>
+2020-04-24
+</td>
+<td>
+initial gamlss model with ga
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/e0fffb9b00efb536c02f213ef866b9f7831cc56d/analysis/3_gamlss_analysis.Rmd" target="_blank">e0fffb9</a>
+</td>
+<td>
+Bernard
+</td>
+<td>
+2020-04-24
+</td>
+<td>
+WIP
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 <hr>
 </div>
 </div>

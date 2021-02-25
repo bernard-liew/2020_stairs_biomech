@@ -22,6 +22,8 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 
 <link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
 <!-- Add a small amount of space between sections. -->
@@ -317,7 +319,7 @@ $(document).ready(function () {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -326,7 +328,7 @@ $(document).ready(function () {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -335,10 +337,10 @@ $(document).ready(function () {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-16
+<strong>Last updated:</strong> 2021-02-25
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
 </p>
 <p>
 <strong>Knit directory:</strong> <code>2020_stairs_biomech/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -354,12 +356,12 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
 </div>
 </div>
 </div>
@@ -426,19 +428,23 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongNocommitsyet"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> No commits yet </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombernardliew2020stairsbiomechtree403511564652012f40165289d15fe355210e7d2btargetblank4035115a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bernard-liew/2020_stairs_biomech/tree/403511564652012f40165289d15fe355210e7d2b" target="_blank">4035115</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongNocommitsyet" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcombernardliew2020stairsbiomechtree403511564652012f40165289d15fe355210e7d2btargetblank4035115a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/bernard-liew/2020_stairs_biomech/tree/403511564652012f40165289d15fe355210e7d2b" target="_blank">4035115</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 </p>
 <pre><code>
 Ignored files:
+    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
     Ignored:    analysis/mediation.Rmd
     Ignored:    manuscript/
@@ -548,10 +554,8 @@ Ignored files:
     Ignored:    output/traceplots_hip.pdf
     Ignored:    output/traceplots_knee.pdf
 
-Unstaged changes:
-    Modified:   analysis/3_gamlss_analysis.Rmd
-    Modified:   analysis/6_prediction.Rmd
-    Modified:   analysis/index.Rmd
+Untracked files:
+    Untracked:  output/dat.xlsx
 
 </code></pre>
 <p>
@@ -564,9 +568,341 @@ Note that any generated files, e.g. HTML, png, CSS, etc., are not included in t
 <hr>
 </div>
 <div id="versions" class="tab-pane fade">
+
 <p>
-There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/6_prediction.Rmd</code>) and HTML (<code>docs/6_prediction.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
 </p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/403511564652012f40165289d15fe355210e7d2b/analysis/6_prediction.Rmd" target="_blank">4035115</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2021-02-25
+</td>
+<td>
+tidying analysis
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/da0f81a6b08bde5decf2620289b9cae95c4b3ed8/analysis/6_prediction.Rmd" target="_blank">da0f81a</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2021-02-16
+</td>
+<td>
+updated website for paper
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/bernard-liew/2020_stairs_biomech/da0f81a6b08bde5decf2620289b9cae95c4b3ed8/docs/6_prediction.html" target="_blank">da0f81a</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2021-02-16
+</td>
+<td>
+updated website for paper
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/1e0530f92403148d118e08bd7e7892c77e2f54e0/analysis/6_prediction.Rmd" target="_blank">1e0530f</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2021-01-06
+</td>
+<td>
+modified figure 4
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/f88b49921f4ee21c3fff6ec87967e7294ad3adc5/analysis/6_prediction.Rmd" target="_blank">f88b499</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2020-12-11
+</td>
+<td>
+modified descriptive summary plot
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/e1f554680977db7238bd0dc6a96868210a83a895/analysis/6_prediction.Rmd" target="_blank">e1f5546</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2020-12-08
+</td>
+<td>
+corrected typo
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/bc3f5f3cd471f0803954b4c92e0ebf294b8a5abe/analysis/6_prediction.Rmd" target="_blank">bc3f5f3</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2020-11-13
+</td>
+<td>
+add descriptive plots
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/97ead082e7114fb22ba7c770f252b767b2d1ece0/analysis/6_prediction.Rmd" target="_blank">97ead08</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2020-11-11
+</td>
+<td>
+modified prediction report
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/c228e6e72e29e3cdcdb222e9a0da6ae2426226bf/analysis/6_prediction.Rmd" target="_blank">c228e6e</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-11-10
+</td>
+<td>
+augmented prediction report
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/35e193ffaae50583659ab6968d92a2aa69e8450e/analysis/6_prediction.Rmd" target="_blank">35e193f</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2020-11-02
+</td>
+<td>
+added smooth plots for main effect of age, speed
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/587e0fd5b43f8cde4310339fced01bc0b9e874e7/analysis/6_prediction.Rmd" target="_blank">587e0fd</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2020-10-23
+</td>
+<td>
+Improved plots
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/ac499a4b1696958eea31e87f36103e971d3b908e/analysis/6_prediction.Rmd" target="_blank">ac499a4</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2020-10-01
+</td>
+<td>
+modified cycle predictions for ankle
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/7098a95cc8096cd30ecde6e7fa3bd665d5f6c5a9/analysis/6_prediction.Rmd" target="_blank">7098a95</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-09-17
+</td>
+<td>
+added final models and bam discrete
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/45b2c3b70e852716d0b64d0ab756f83c413cb639/analysis/6_prediction.Rmd" target="_blank">45b2c3b</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-07-08
+</td>
+<td>
+add prediction for gamlss.
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/d73eae556da1919b35a9127e4e80528132157193/analysis/6_prediction.Rmd" target="_blank">d73eae5</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-06-20
+</td>
+<td>
+added mcmc plots
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/813416b750681260dd8f7d7dece0af62f73fe48d/analysis/6_prediction.Rmd" target="_blank">813416b</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-06-16
+</td>
+<td>
+Added predictions
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/4d830c1e9e2f6ae95636b7e96eee0695a76e7291/analysis/6_prediction.Rmd" target="_blank">4d830c1</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-06-14
+</td>
+<td>
+added prediction
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/dc8b002c87e97ab5beeff794c9829e152c9eeab3/analysis/6_prediction.Rmd" target="_blank">dc8b002</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2020-06-14
+</td>
+<td>
+moved to analysis folder
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 <hr>
 </div>
 </div>
@@ -593,6 +929,9 @@ library(mgcViz)
 library (cowplot)
 library (ggforce)
 library (rainbow)
+
+#Table
+library (kableExtra)
 
 source (&quot;code/measures_johnson.R&quot;)</code></pre>
 </div>
@@ -643,7 +982,7 @@ dat &lt;- readRDS(&quot;output/df_clean_self.RDS&quot;) %&gt;%
 
 
 our_summary1 &lt;-
-  list(&quot;Age (years)&quot; =
+  list(&quot;Age (yo)&quot; =
        list(&quot;mean (sd)&quot; = ~ qwraps2::mean_sd(age, denote_sd = &quot;paren&quot;)),
        &quot;Height (m)&quot; =
        list(&quot;mean (sd)&quot; = ~ qwraps2::mean_sd(ht, denote_sd = &quot;paren&quot;)),
@@ -672,23 +1011,151 @@ by_cyl &lt;- dplyr::select (by_cyl, Variables, everything ())
 
 rownames (by_cyl) &lt;- NULL
 
-by_cyl</code></pre>
-<pre><code>          Variables fukuchi (N = 33) horst (N = 57) schreiber (N = 48)
-1       Age (years)    39.42 (17.87)   23.12 (2.73)      38.17 (13.97)
-2        Height (m)      1.67 (0.12)    1.74 (0.10)        1.74 (0.09)
-3         Mass (kg)    67.66 (12.44)  67.93 (11.26)      71.96 (12.19)
-4             Sex-F          15 (45)        29 (51)            23 (48)
-5             Sex-M          18 (55)        28 (49)            25 (52)
-6       Speed (m/s)      1.23 (0.17)    1.45 (0.10)        1.16 (0.14)
-7 Stride length (m)      1.22 (0.14)    1.51 (0.06)        1.28 (0.12)
-  taylor (N = 140)
-1     65.40 (6.47)
-2      1.68 (0.09)
-3    74.03 (14.92)
-4          90 (64)
-5          50 (36)
-6      1.41 (0.19)
-7      1.47 (0.16)</code></pre>
+by_cyl %&gt;%
+  kable %&gt;%
+  kable_styling()</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Variables
+</th>
+<th style="text-align:left;">
+fukuchi (N = 33)
+</th>
+<th style="text-align:left;">
+horst (N = 57)
+</th>
+<th style="text-align:left;">
+schreiber (N = 48)
+</th>
+<th style="text-align:left;">
+taylor (N = 140)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Age (years)
+</td>
+<td style="text-align:left;">
+39.42 (17.87)
+</td>
+<td style="text-align:left;">
+23.12 (2.73)
+</td>
+<td style="text-align:left;">
+38.17 (13.97)
+</td>
+<td style="text-align:left;">
+65.40 (6.47)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Height (m)
+</td>
+<td style="text-align:left;">
+1.67 (0.12)
+</td>
+<td style="text-align:left;">
+1.74 (0.10)
+</td>
+<td style="text-align:left;">
+1.74 (0.09)
+</td>
+<td style="text-align:left;">
+1.68 (0.09)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mass (kg)
+</td>
+<td style="text-align:left;">
+67.66 (12.44)
+</td>
+<td style="text-align:left;">
+67.93 (11.26)
+</td>
+<td style="text-align:left;">
+71.96 (12.19)
+</td>
+<td style="text-align:left;">
+74.03 (14.92)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Sex-F
+</td>
+<td style="text-align:left;">
+15 (45)
+</td>
+<td style="text-align:left;">
+29 (51)
+</td>
+<td style="text-align:left;">
+23 (48)
+</td>
+<td style="text-align:left;">
+90 (64)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Sex-M
+</td>
+<td style="text-align:left;">
+18 (55)
+</td>
+<td style="text-align:left;">
+28 (49)
+</td>
+<td style="text-align:left;">
+25 (52)
+</td>
+<td style="text-align:left;">
+50 (36)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Speed (m/s)
+</td>
+<td style="text-align:left;">
+1.23 (0.17)
+</td>
+<td style="text-align:left;">
+1.45 (0.10)
+</td>
+<td style="text-align:left;">
+1.16 (0.14)
+</td>
+<td style="text-align:left;">
+1.41 (0.19)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Stride length (m)
+</td>
+<td style="text-align:left;">
+1.22 (0.14)
+</td>
+<td style="text-align:left;">
+1.51 (0.06)
+</td>
+<td style="text-align:left;">
+1.28 (0.12)
+</td>
+<td style="text-align:left;">
+1.47 (0.16)
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="descriptive-plots" class="section level1">
 <h1>Descriptive plots</h1>
@@ -725,7 +1192,7 @@ f1 &lt;- ggplot(df_plot, aes(x = age_cat)) +
   geom_point (aes (y = age_m)) +
   geom_errorbar(aes (ymin = age_m - age_sd, ymax = age_m + age_sd), width = 0.2) + 
   labs (x = &quot;Age category&quot;,
-        y = &quot;Age (years)&quot;) +
+        y = &quot;Age (yo)&quot;) +
   theme_cowplot() + 
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
@@ -795,15 +1262,7 @@ pcol &lt;- plot_grid (f1 + theme (axis.title.x = element_blank() ),
 
 
 pcol</code></pre>
-<p><img src="figure/6_prediction.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code># Export
-pdf (width = 12, height = 8, file = &quot;manuscript/fig1.pdf&quot;)
-
-pcol
-
-dev.off()</code></pre>
-<pre><code>png 
-  2 </code></pre>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-5-1.png" width="768" style="display: block; margin: auto;" /></p>
 </div>
 <div id="set-colour-schems" class="section level1">
 <h1>Set colour schems</h1>
@@ -833,7 +1292,7 @@ df_plot &lt;- dat %&gt;%
   theme_cowplot()
 
 f</code></pre>
-<p><img src="figure/6_prediction.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-8-1.png" width="768" style="display: block; margin: auto;" /></p>
 </div>
 <div id="plot-individual-data" class="section level1">
 <h1>Plot individual data</h1>
@@ -876,7 +1335,7 @@ paste0(names(df_plot)[i], : Please assign column name for the data matrix.
 
 Warning in fds(x = c(1:101), y = samp_dat, xname = &quot;% Stride&quot;, yname =
 paste0(names(df_plot)[i], : Please assign column name for the data matrix.</code></pre>
-<p><img src="figure/6_prediction.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-10-1.png" width="768" style="display: block; margin: auto;" /></p>
 </div>
 <div id="get-predictive-error" class="section level1">
 <h1>Get predictive error</h1>
@@ -947,13 +1406,59 @@ pred &lt;- dat_a %&gt;%
 
 error_h &lt;- apply (all_measures(obs, pred), 2, mean)
 
-bind_rows (error_a, error_k, error_h)</code></pre>
-<pre><code># A tibble: 3 x 3
-   RMSE relRMSE   cor
-  &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;
-1 0.414   0.114 0.939
-2 0.337   0.129 0.793
-3 0.281   0.172 0.797</code></pre>
+bind_rows (error_a, error_k, error_h) %&gt;%
+  kable () %&gt;%
+  kable_styling()</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+RMSE
+</th>
+<th style="text-align:right;">
+relRMSE
+</th>
+<th style="text-align:right;">
+cor
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+0.4143755
+</td>
+<td style="text-align:right;">
+0.1144241
+</td>
+<td style="text-align:right;">
+0.9385873
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+0.3369296
+</td>
+<td style="text-align:right;">
+0.1292193
+</td>
+<td style="text-align:right;">
+0.7927312
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+0.2812504
+</td>
+<td style="text-align:right;">
+0.1716233
+</td>
+<td style="text-align:right;">
+0.7970301
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="smooth-plots" class="section level1">
 <h1>Smooth plots</h1>
@@ -1020,7 +1525,7 @@ pp_ank &lt;- get_predictions(smo,
                       rm.ranef = TRUE,
                       se = TRUE) %&gt;%
   mutate (age = factor (age),
-          speed = factor (speed))</code></pre>
+          speed = factor (speed, labels = c(&quot;1m/s&quot;, &quot;1.5m/s&quot;)))</code></pre>
 <pre><code>Summary:
     * sex : factor; set to the value(s): m. 
     * cycle : integer vector with 51 values; set to the value(s): 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, ... 
@@ -1054,7 +1559,7 @@ pp_kne &lt;- get_predictions(smo,
                       rm.ranef = TRUE,
                       se = TRUE) %&gt;%
   mutate (age = factor (age),
-          speed = factor (speed))</code></pre>
+          speed = factor (speed, labels = c(&quot;1m/s&quot;, &quot;1.5m/s&quot;)))</code></pre>
 <pre><code>Summary:
     * sex : factor; set to the value(s): f. 
     * cycle : integer vector with 101 values; set to the value(s): 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ... 
@@ -1087,7 +1592,7 @@ pp_hip &lt;- get_predictions(smo,
                       rm.ranef = TRUE,
                       se = TRUE) %&gt;%
   mutate (age = factor (age),
-          speed = factor (speed))</code></pre>
+          speed = factor (speed, labels = c(&quot;1m/s&quot;, &quot;1.5m/s&quot;)))</code></pre>
 <pre><code>Summary:
     * sex : factor; set to the value(s): f. 
     * cycle : integer vector with 101 values; set to the value(s): 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ... 
@@ -1139,7 +1644,7 @@ legend &lt;- get_legend(
 # add the legend to the row we made earlier. Give it one-third of 
 # the width of one plot (via rel_widths).
 plot_grid(pcol, legend, rel_widths = c(3, .4))</code></pre>
-<p><img src="figure/6_prediction.Rmd/unnamed-chunk-20-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-20-1.png" width="768" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="peaks-inference" class="section level2">
@@ -1149,7 +1654,7 @@ plot_grid(pcol, legend, rel_widths = c(3, .4))</code></pre>
 <h2>Ankle</h2>
 <pre class="r"><code>a2 &lt;-pp_ank %&gt;%
   group_by(age, speed, strlen) %&gt;%
-  filter (fit == max (fit))
+  filter (fit == max (fit)) 
 
 a2_plot &lt;- ggplot (a2) +
   geom_point(aes (x = age, y = fit, group = 1)) +
@@ -1165,7 +1670,7 @@ a2_plot &lt;- ggplot (a2) +
 <pre class="r"><code>k2 &lt;-pp_kne %&gt;%
   filter (cycle &gt; 10 &amp; cycle &lt; 40) %&gt;%
   group_by(age, speed, strlen) %&gt;%
-  filter (fit == max (fit))
+  filter (fit == max (fit)) 
 
 k2_plot &lt;- ggplot (k2) +
   geom_point(aes (x = age, y = fit, group = 1)) +
@@ -1229,7 +1734,7 @@ h3_plot &lt;- ggplot (h3) +
             hjust = 0,
             align = &quot;v&quot;,
             labels = &quot;auto&quot;)</code></pre>
-<p><img src="figure/6_prediction.Rmd/unnamed-chunk-25-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/6_prediction.Rmd/unnamed-chunk-25-1.png" width="768" style="display: block; margin: auto;" /></p>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -1256,14 +1761,14 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] rainbow_3.6       pcaPP_1.9-73      ggforce_0.3.2     cowplot_1.1.1    
- [5] mgcViz_0.1.6      rgl_0.103.5       qgam_1.3.2        itsadug_2.4      
- [9] plotfunctions_1.4 gamlss.add_5.1-6  rpart_4.1-15      nnet_7.3-14      
-[13] mgcv_1.8-33       gamlss_5.2-0      nlme_3.1-151      gamlss.dist_5.1-7
-[17] MASS_7.3-53       gamlss.data_5.1-4 magrittr_2.0.1    qwraps2_0.5.0    
-[21] forcats_0.5.0     stringr_1.4.0     dplyr_1.0.2       purrr_0.3.4      
-[25] readr_1.4.0       tidyr_1.1.2       tibble_3.0.4      ggplot2_3.3.3    
-[29] tidyverse_1.3.0  
+ [1] kableExtra_1.3.1  rainbow_3.6       pcaPP_1.9-73      ggforce_0.3.2    
+ [5] cowplot_1.1.1     mgcViz_0.1.6      rgl_0.103.5       qgam_1.3.2       
+ [9] itsadug_2.4       plotfunctions_1.4 gamlss.add_5.1-6  rpart_4.1-15     
+[13] nnet_7.3-14       mgcv_1.8-33       gamlss_5.2-0      nlme_3.1-151     
+[17] gamlss.dist_5.1-7 MASS_7.3-53       gamlss.data_5.1-4 magrittr_2.0.1   
+[21] qwraps2_0.5.0     forcats_0.5.0     stringr_1.4.0     dplyr_1.0.2      
+[25] purrr_0.3.4       readr_1.4.0       tidyr_1.1.2       tibble_3.0.4     
+[29] ggplot2_3.3.3     tidyverse_1.3.0   workflowr_1.6.2  
 
 loaded via a namespace (and not attached):
  [1] minqa_1.2.4             colorspace_2.0-0        ellipsis_0.3.1         
@@ -1271,33 +1776,34 @@ loaded via a namespace (and not attached):
  [7] rstudioapi_0.13         farver_2.0.3            mvtnorm_1.1-1          
 [10] fansi_0.4.1             lubridate_1.7.9.2       xml2_1.3.2             
 [13] codetools_0.2-18        doParallel_1.0.16       knitr_1.30             
-[16] polyclip_1.10-0         jsonlite_1.7.2          workflowr_1.6.2        
-[19] nloptr_1.2.2.2          broom_0.7.4.9000        cluster_2.1.0          
-[22] dbplyr_2.0.0            shiny_1.5.0             compiler_4.0.2         
-[25] httr_1.4.2              backports_1.2.0         assertthat_0.2.1       
-[28] Matrix_1.2-18           fastmap_1.0.1           cli_2.2.0              
-[31] tweenr_1.0.1            later_1.1.0.1           htmltools_0.5.0        
-[34] tools_4.0.2             gtable_0.3.0            glue_1.4.2             
-[37] Rcpp_1.0.6              cellranger_1.1.0        vctrs_0.3.6            
-[40] iterators_1.0.13        crosstalk_1.1.0.1       xfun_0.20              
+[16] polyclip_1.10-0         jsonlite_1.7.2          nloptr_1.2.2.2         
+[19] broom_0.7.4.9000        cluster_2.1.0           dbplyr_2.0.0           
+[22] shiny_1.5.0             compiler_4.0.2          httr_1.4.2             
+[25] backports_1.2.0         assertthat_0.2.1        Matrix_1.2-18          
+[28] fastmap_1.0.1           cli_2.2.0               tweenr_1.0.1           
+[31] later_1.1.0.1           htmltools_0.5.0         tools_4.0.2            
+[34] gtable_0.3.0            glue_1.4.2              Rcpp_1.0.6             
+[37] cellranger_1.1.0        vctrs_0.3.6             iterators_1.0.13       
+[40] crosstalk_1.1.0.1       xfun_0.20               ps_1.5.0               
 [43] lme4_1.1-26             rvest_0.3.6             mime_0.9               
 [46] miniUI_0.1.1.1          lifecycle_0.2.0         statmod_1.4.35         
 [49] scales_1.1.1            hms_0.5.3               promises_1.1.1         
 [52] RColorBrewer_1.1-2      gamm4_0.2-6             yaml_2.2.1             
 [55] gridExtra_2.3           DiceKriging_1.5.8       reshape_0.8.8          
-[58] stringi_1.5.3           foreach_1.5.1           boot_1.3-25            
-[61] manipulateWidget_0.10.1 hdrcde_3.3              matrixStats_0.57.0     
-[64] rlang_0.4.10            pkgconfig_2.0.3         evaluate_0.14          
-[67] lattice_0.20-41         labeling_0.4.2          ks_1.11.7              
-[70] htmlwidgets_1.5.3       tidyselect_1.1.0        GGally_2.1.0           
-[73] plyr_1.8.6              R6_2.5.0                generics_0.1.0         
-[76] DBI_1.1.0               pillar_1.4.7            haven_2.3.1            
-[79] withr_2.3.0             survival_3.2-7          modelr_0.1.8           
-[82] crayon_1.3.4            utf8_1.1.4              KernSmooth_2.23-18     
-[85] rmarkdown_2.6           viridis_0.5.1           grid_4.0.2             
-[88] readxl_1.3.1            git2r_0.27.1            reprex_0.3.0           
-[91] digest_0.6.27           webshot_0.5.2           xtable_1.8-4           
-[94] httpuv_1.5.4            munsell_0.5.0           viridisLite_0.3.0      </code></pre>
+[58] stringi_1.5.3           highr_0.8               foreach_1.5.1          
+[61] boot_1.3-25             manipulateWidget_0.10.1 hdrcde_3.3             
+[64] matrixStats_0.57.0      rlang_0.4.10            pkgconfig_2.0.3        
+[67] evaluate_0.14           lattice_0.20-41         labeling_0.4.2         
+[70] ks_1.11.7               htmlwidgets_1.5.3       tidyselect_1.1.0       
+[73] GGally_2.1.0            plyr_1.8.6              R6_2.5.0               
+[76] generics_0.1.0          DBI_1.1.0               pillar_1.4.7           
+[79] haven_2.3.1             whisker_0.4             withr_2.3.0            
+[82] survival_3.2-7          modelr_0.1.8            crayon_1.3.4           
+[85] utf8_1.1.4              KernSmooth_2.23-18      rmarkdown_2.6          
+[88] viridis_0.5.1           grid_4.0.2              readxl_1.3.1           
+[91] git2r_0.27.1            reprex_0.3.0            digest_0.6.27          
+[94] webshot_0.5.2           xtable_1.8-4            httpuv_1.5.4           
+[97] munsell_0.5.0           viridisLite_0.3.0      </code></pre>
 </div>
 </div>
 </div>

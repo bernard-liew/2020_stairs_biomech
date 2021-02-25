@@ -317,7 +317,7 @@ $(document).ready(function () {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -326,7 +326,7 @@ $(document).ready(function () {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -335,10 +335,10 @@ $(document).ready(function () {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-16
+<strong>Last updated:</strong> 2021-02-25
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 1 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 2 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
 </p>
 <p>
 <strong>Knit directory:</strong> <code>2020_stairs_biomech/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -354,31 +354,35 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
 </div>
 </div>
 </div>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongNocommitsyet"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> No commits yet </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombernardliew2020stairsbiomechtree403511564652012f40165289d15fe355210e7d2btargetblank4035115a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bernard-liew/2020_stairs_biomech/tree/403511564652012f40165289d15fe355210e7d2b" target="_blank">4035115</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongNocommitsyet" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcombernardliew2020stairsbiomechtree403511564652012f40165289d15fe355210e7d2btargetblank4035115a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/bernard-liew/2020_stairs_biomech/tree/403511564652012f40165289d15fe355210e7d2b" target="_blank">4035115</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 </p>
 <pre><code>
 Ignored files:
+    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
     Ignored:    analysis/mediation.Rmd
     Ignored:    manuscript/
@@ -488,10 +492,8 @@ Ignored files:
     Ignored:    output/traceplots_hip.pdf
     Ignored:    output/traceplots_knee.pdf
 
-Unstaged changes:
-    Modified:   analysis/3_gamlss_analysis.Rmd
-    Modified:   analysis/6_prediction.Rmd
-    Modified:   analysis/index.Rmd
+Untracked files:
+    Untracked:  output/dat.xlsx
 
 </code></pre>
 <p>
@@ -504,16 +506,110 @@ Note that any generated files, e.g. HTML, png, CSS, etc., are not included in t
 <hr>
 </div>
 <div id="versions" class="tab-pane fade">
+
 <p>
-There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/index.Rmd</code>) and HTML (<code>docs/index.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
 </p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/403511564652012f40165289d15fe355210e7d2b/analysis/index.Rmd" target="_blank">4035115</a>
+</td>
+<td>
+bernard-liew
+</td>
+<td>
+2021-02-25
+</td>
+<td>
+tidying analysis
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/da0f81a6b08bde5decf2620289b9cae95c4b3ed8/analysis/index.Rmd" target="_blank">da0f81a</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2021-02-16
+</td>
+<td>
+updated website for paper
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/bernard-liew/2020_stairs_biomech/da0f81a6b08bde5decf2620289b9cae95c4b3ed8/docs/index.html" target="_blank">da0f81a</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2021-02-16
+</td>
+<td>
+updated website for paper
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bernard-liew/2020_stairs_biomech/blob/939ee4f56c975515887d1cf677b3d401597a2149/analysis/index.Rmd" target="_blank">939ee4f</a>
+</td>
+<td>
+Liew
+</td>
+<td>
+2021-02-16
+</td>
+<td>
+added workflow project
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 <hr>
 </div>
 </div>
 </div>
 <p>This is the website containing the codes for the paper.</p>
-<p>Click on this <a href="3_gamlss_analysis.html">docs/3_gamlss_analysis.html</a> to see the codes for the analysis.</p>
-<p>Click on this <a href="6_prediction.html">docs/6_prediction.html</a> to see the codes for the results.</p>
+<p>Click on this <a href="3_gamlss_analysis.html">analysis</a> to see the codes for the analysis.</p>
+<p>Click on this <a href="6_prediction.html">result</a> to see the codes for the results.</p>
 
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
